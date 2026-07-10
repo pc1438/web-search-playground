@@ -44,6 +44,24 @@ python3 app/server.py --port 8088
 #    open http://localhost:8088
 ```
 
+## Deploy
+
+The server is Python's built-in `http.server` (threaded, single-process) — great
+for local use and small internal deployments, but **not hardened for the open
+internet**. To run it beyond localhost:
+
+- **Bind to localhost and put it behind a reverse proxy** (nginx, Caddy) that
+  terminates **TLS** and adds **authentication** — the app has no auth of its own,
+  and open access can burn your provider API credits.
+- **Set `ALLOWED_ORIGIN`** to your domain (CORS) in `env.txt`.
+- **Keep `env.txt` on the server only** — inject keys at runtime; never bake them
+  into an image or commit them.
+- Run under a process manager (systemd, pm2, Docker) so it restarts on failure.
+
+```bash
+python3 app/server.py --port 8088   # front this with your proxy
+```
+
 ## Project layout
 
 ```
@@ -75,5 +93,4 @@ tab, with endpoints and forms, automatically. See
   the key server-side. `env.txt` is git-ignored.
 - **Latency** shown in the UI is full round-trip (browser → server → provider →
   back), not the provider's own processing time.
-- **Deployment:** bind to `127.0.0.1` behind a reverse proxy with TLS + auth, and
-  set `ALLOWED_ORIGIN` for anything beyond localhost.
+- **Deploying beyond localhost?** See [Deploy](#deploy) above.
