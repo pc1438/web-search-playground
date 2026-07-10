@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search API Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #fafafa;
+    color: #1f2328;
+    min-height: 100vh;
+  }
+
+  /* ─── Header ─────────────────────────────────────────────────────── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 22px 32px 0;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .header h1 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: #1f2328; }
+  .header .subtitle { font-size: 13px; color: #8c959f; margin-top: 4px; }
+
+  /* ─── Tab bar (folder tabs — matches dashboard) ──────────────────── */
+  .tab-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    margin: 14px -32px 0;      /* offset header padding so the gray band spans full width */
+    padding: 0 32px;
+    background: #e4e6e9;
+    border-bottom: 1px solid #c8cbd0;
+  }
+  .tab-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #5a6270;
+    cursor: pointer;
+    white-space: nowrap;
+    position: relative;
+    bottom: -1px;              /* overlap the bar's bottom border */
+    transition: color 0.1s, background 0.1s;
+  }
+  .tab-btn:hover { color: #1f2328; background: rgba(255,255,255,0.5); }
+  .tab-btn.active {
+    background: #fafafa;       /* == page bg, so the tab merges into the content */
+    border-color: #c8cbd0;
+    border-bottom-color: #fafafa;
+    color: #1f2328;
+    font-weight: 600;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── Shared UI components ───────────────────────────────────────── */
+  .input-bar {
+    padding: 20px 32px;
+    border-bottom: 1px solid #e4e6e9;
+    background: #f1f5f9;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .tab-intro {
+    padding: 16px 32px 0;
+    font-size: 13px;
+    color: #5a6270;
+    line-height: 1.5;
+  }
+  .tab-intro strong { color: #1f2328; }
+  .input-bar select {
+    background: #fff;
+    color: #1f2328;
+    border: 1px solid #d0d3d8;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .input-bar input[type="text"] {
+    flex: 1;
+    background: #fff;
+    color: #1f2328;
+    border: 1px solid #d0d3d8;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+  }
+  .input-bar input:focus { border-color: #8c959f; }
+  .input-bar button {
+    background: #3d434d;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .input-bar button:hover { background: #2c313a; }
+  .input-bar button:disabled { background: #d0d3d8; cursor: not-allowed; }
+  .input-bar .stop-btn { background: #fff; color: #dc2626; border: 1.5px solid #dc2626; }
+  .input-bar .stop-btn:hover { background: #fef2f2; }
+  .input-bar label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: #8c959f; cursor: pointer; white-space: nowrap;
+  }
+
+  .status-bar {
+    padding: 12px 32px;
+    font-size: 13px;
+    color: #8c959f;
+    display: none;
+  }
+  .status-bar.visible { display: block; }
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid #e4e6e9;
+    border-top-color: #3d434d;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Comparison tab (ported from existing) ──────────────────────── */
+  .savings-bar {
+    padding: 14px 32px;
+    background: #ecfdf5;
+    border-bottom: 1px solid #a7f3d0;
+    font-size: 14px;
+    color: #059669;
+    font-weight: 600;
+    display: none;
+  }
+  .savings-bar.visible { display: block; }
+  .savings-bar.negative { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+
+  .answers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid #e4e6e9;
+  }
+  .answer-pane {
+    border-right: 1px solid #e4e6e9;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    opacity: 0.4;
+    transition: opacity 0.4s ease;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .answer-pane.loaded { opacity: 1; }
+  .answer-pane:last-child { border-right: none; }
+  .answer-pane .pane-header {
+    padding: 14px 20px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e4e6e9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .answer-pane .pane-header h3 { font-size: 14px; font-weight: 600; color: #1f2328; }
+  /* ── Code info button ───────────────────────────────────────── */
+  .info-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #f0f1f3; border: 1px solid #d0d3d8;
+    color: #5a6270; font-size: 10px; font-weight: 700;
+    cursor: pointer; vertical-align: middle; margin-left: 7px;
+    flex-shrink: 0; line-height: 1; transition: background 0.15s;
+  }
+  .info-btn:hover { background: #3d434d; color: #fff; border-color: #3d434d; }
+
+  /* ── Code info modal ────────────────────────────────────────── */
+  #codeInfoOverlay {
+    display: none; position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.35); align-items: center; justify-content: center;
+  }
+  #codeInfoOverlay.visible { display: flex; }
+  #codeInfoModal {
+    background: #f1f5f9; border-radius: 14px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+    border: 1px solid #e4e6e9;
+    max-width: 800px; width: calc(100vw - 48px);
+    max-height: calc(100vh - 80px); overflow-y: auto;
+    padding: 28px 32px 24px;
+    font-size: 13px; color: #1f2328; position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  #codeInfoModal h3 { font-size: 16px; font-weight: 700; color: #1f2328; margin: 0 0 4px; }
+  #codeInfoModal .info-file {
+    font-size: 11px; color: #8c959f; font-family: monospace;
+    background: #f0f1f3; padding: 3px 8px; border-radius: 4px;
+    display: inline-block; margin-bottom: 14px;
+  }
+  #codeInfoModal .info-api {
+    background: #f0f1f3; border-left: 3px solid #3d434d;
+    padding: 8px 12px; border-radius: 0 6px 6px 0;
+    margin-bottom: 18px; font-size: 12px; color: #5a6270;
+  }
+  #codeInfoModal h4 {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #8c959f; margin: 18px 0 8px;
+  }
+  #codeInfoModal table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  #codeInfoModal table th {
+    text-align: left; padding: 6px 10px; background: #f1f5f9;
+    border-bottom: 2px solid #e4e6e9; color: #5a6270; font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  #codeInfoModal table td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  #codeInfoModal table tr:last-child td { border-bottom: none; }
+  #codeInfoModal table td:first-child { font-weight: 600; color: #1f2328; white-space: nowrap; width: 30%; }
+  #codeInfoModal table td:nth-child(2) { font-family: monospace; color: #3d434d; background: #f0f1f3; width: 25%; }
+  #codeInfoModal table td:nth-child(3) { color: #5a6270; }
+  #codeInfoModal .info-alts { list-style: none; padding: 0; margin: 0; }
+  #codeInfoModal .info-alts li {
+    padding: 6px 0 6px 18px; border-bottom: 1px solid #e5e7eb;
+    position: relative; color: #5a6270; font-size: 12px;
+  }
+  #codeInfoModal .info-alts li:before {
+    content: '→'; position: absolute; left: 0; color: #3d434d;
+  }
+  #codeInfoModal .info-alts li:last-child { border-bottom: none; }
+  #codeInfoModal .info-close {
+    position: absolute; top: 16px; right: 20px;
+    cursor: pointer; font-size: 20px; color: #8c959f; line-height: 1;
+    background: none; border: none; padding: 4px;
+  }
+  #codeInfoModal .info-close:hover { color: #1f2328; }
+
+  #costPopup {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: #fff;
+    border: 1px solid #d0d3d8;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+    padding: 16px 20px;
+    min-width: 320px;
+    max-width: 420px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #1f2328;
+  }
+  #costPopup.visible { display: block; }
+  #costPopup h4 {
+    font-size: 13px; font-weight: 700; margin: 0 0 10px;
+    color: #1f2328; border-bottom: 1px solid #f0f1f3; padding-bottom: 8px;
+  }
+  #costPopup .popup-section { margin-bottom: 10px; }
+  #costPopup .popup-section-label {
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #8c959f; margin-bottom: 4px;
+  }
+  #costPopup .popup-line { display: flex; justify-content: space-between; gap: 16px; }
+  #costPopup .popup-line .desc { color: #5a6270; }
+  #costPopup .popup-line .val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #costPopup .popup-total {
+    border-top: 1px solid #f0f1f3; margin-top: 8px; padding-top: 8px;
+    font-weight: 700; display: flex; justify-content: space-between;
+  }
+  #costPopup .popup-close {
+    position: absolute; top: 10px; right: 14px;
+    cursor: pointer; font-size: 16px; color: #8c959f; line-height: 1;
+  }
+  #costPopup .popup-close:hover { color: #1f2328; }
+
+  .glossary {
+    padding: 24px 32px; border-top: 1px solid #e4e6e9;
+    background: #f1f5f9; margin-top: 8px;
+  }
+  .glossary h2 { font-size: 14px; color: #1f2328; margin-bottom: 12px; font-weight: 600; }
+  .glossary dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 12px; line-height: 1.5; }
+  .glossary dt { color: #5a6270; font-weight: 600; white-space: nowrap; }
+  .glossary dd { color: #5a6270; margin: 0; }
+
+  /* ─── Exa playground ─────────────────────────────────────────────── */
+  .pg-wrap { display: grid; grid-template-columns: 440px 1fr; gap: 0; min-height: 60vh; }
+  .pg-left { padding: 20px 32px; border-right: 1px solid #e4e6e9; background: #f1f5f9; }
+  .pg-right { padding: 20px 32px; min-width: 0; }
+
+  .pg-endpoint-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .pg-endpoint-bar .pg-select { flex: 1; min-width: 0; }
+  .pg-endpoint-label { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
+  /* The dropdown shows METHOD + path; this is just the human description under it. */
+  .pg-endpoint-desc { font-size: 13px; color: #5a6270; line-height: 1.45; margin: 0 0 16px; }
+  .pg-docs-link { font-size: 12px; font-weight: 600; color: #3d434d; text-decoration: none; border: 1px solid #d0d3d8; border-radius: 6px; padding: 4px 10px; white-space: nowrap; }
+  .pg-docs-link:hover { background: #f1f5f9; border-color: #9ca3af; }
+
+  .pg-input {
+    background: #fff; color: #1f2328; border: 1px solid #d0d3d8;
+    border-radius: 7px; padding: 8px 11px; font-size: 13px; outline: none; width: 100%;
+    font-family: inherit;
+  }
+  .pg-input:focus { border-color: #8c959f; }
+  .pg-textarea { resize: vertical; min-height: 38px; }
+  .pg-num { width: 120px; }
+  .pg-date { width: 170px; }
+  .pg-select { cursor: pointer; }
+
+  .pg-compare-wrap {
+    background: #f1f5f9; border: 1px solid #e4e6e9; border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 16px;
+  }
+  .pg-compare-on { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pg-compare-on-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin-right: 2px; }
+  .pg-onpill {
+    font-size: 12px; padding: 3px 12px; border-radius: 20px; cursor: pointer;
+    border: 1px solid #d0d3d8; background: #fff; color: #5a6270; font-weight: 500;
+    font-family: 'SF Mono', monospace;
+  }
+  .pg-onpill:hover { border-color: #9ca3af; }
+  .pg-onpill.active { background: #3d434d; border-color: #3d434d; color: #fff; }
+  .pg-cat-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; }
+  .pg-cat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #5a6270; cursor: pointer; }
+
+  .pg-dep-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8c959f; cursor: pointer; margin-bottom: 10px; }
+  .pg-dep-count { color: #9ca3af; }
+  .hide-deprecated .pg-deprecated { display: none; }
+  .pg-overridden { opacity: 0.5; }
+  .pg-overridden .pg-input { pointer-events: none; }
+  .pg-overridden .pg-label::after { content: " — set in Compare mode"; color: #9ca3af; font-weight: 400; text-transform: none; }
+  .pg-deprecated .pg-label::after { content: " · deprecated"; color: #b0895a; font-weight: 400; text-transform: none; }
+  /* Two short scalars pair up per row; roomy fields (.pg-full) span the whole row. */
+  .pg-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; align-items: start; }
+  .pg-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .pg-full { grid-column: 1 / -1; }   /* groups + roomy fields span both columns */
+  .pg-label { font-size: 12px; font-weight: 600; color: #5a6270; font-family: 'SF Mono', 'Fira Code', monospace; display: flex; align-items: center; }
+  .pg-req { color: #dc2626; }
+  .pg-invalid .pg-input { border-color: #dc2626; }
+  .pg-invalid .pg-label { color: #dc2626; }
+  .pg-check { cursor: pointer; }
+  .pg-help { font-size: 11px; color: #8c959f; line-height: 1.4; }
+  .pg-bool { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5a6270; cursor: pointer; }
+
+  /* Help moved from an always-on line to a hover/click tooltip on this ⓘ badge. */
+  .pg-info {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 13px; height: 13px; margin-left: 5px; border-radius: 50%;
+    border: 1px solid #c2c8ce; color: #8c959f; cursor: pointer; user-select: none;
+    font-family: -apple-system, system-ui, sans-serif; font-size: 9px; font-weight: 700;
+    font-style: normal; line-height: 1; text-transform: none;
+  }
+  .pg-info:hover { border-color: #8c959f; color: #5a6270; }
+  .pg-tooltip {
+    position: fixed; z-index: 9999; max-width: 280px; pointer-events: none; opacity: 0;
+    background: #1f2328; color: #f1f5f9; font-size: 12px; line-height: 1.45; font-weight: 400;
+    font-family: -apple-system, system-ui, sans-serif; text-transform: none;
+    padding: 7px 10px; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.2); transition: opacity .12s;
+  }
+  .pg-tooltip.show { opacity: 1; }
+
+  /* Booleans render as a toggle switch (was a bare checkbox). */
+  .pg-switch { position: relative; display: inline-block; width: 34px; height: 18px; cursor: pointer; }
+  .pg-switch-input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .pg-switch-track { position: absolute; inset: 0; background: #d0d3d8; border-radius: 999px; transition: background .15s; }
+  .pg-switch-track::before { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .pg-switch-input:checked + .pg-switch-track { background: #3d434d; }
+  .pg-switch-input:checked + .pg-switch-track::before { transform: translateX(16px); }
+
+  .pg-group { border: 1px solid #e4e6e9; border-radius: 8px; padding: 10px 12px; background: #ffffff; }
+  .pg-group-head { margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .pg-group-toggle, .pg-group-title { font-size: 13px; font-weight: 600; color: #3d434d; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .pg-group-title { color: #5a6270; cursor: default; }
+  .pg-collapsible .pg-group-head { cursor: pointer; }
+  .pg-collapsible .pg-group-title { cursor: pointer; }
+  .pg-adv-count { font-size: 11px; font-weight: 600; color: #8c959f; background: #f1f5f9; border-radius: 10px; padding: 1px 8px; }
+  .pg-chevron { margin-left: auto; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid #9ca3af; transition: transform .15s; }
+  .pg-collapsed .pg-chevron { transform: rotate(-90deg); }
+  .pg-collapsed .pg-group-body { display: none; }
+  /* Nested/advanced fields stack single-column (only the top-level form is 2-up). */
+  .pg-group-body { display: flex; flex-direction: column; gap: 12px; padding-left: 12px; border-left: 2px solid #f0f1f3; }
+
+  .pg-send {
+    margin-top: 14px; width: 100%; background: #3d434d; color: #fff; border: none;
+    border-radius: 8px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .pg-send:hover { background: #2c313a; }
+  .pg-send:disabled { background: #d0d3d8; cursor: not-allowed; }
+
+  .pg-req-details { margin-top: 16px; font-size: 12px; }
+  /* Collapsible affordance shared by the request panel + raw response object */
+  .pg-req-details > summary, .pg-raw > summary {
+    cursor: pointer; list-style: none; user-select: none;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 12px; border: 1px solid #d0d3d8; border-radius: 8px;
+    background: #f1f5f9; font-size: 12px; font-weight: 600; color: #5a6270;
+  }
+  .pg-req-details > summary::-webkit-details-marker, .pg-raw > summary::-webkit-details-marker { display: none; }
+  .pg-req-details > summary::before, .pg-raw > summary::before { content: "\25B8"; font-size: 10px; color: #9ca3af; transition: transform .15s; }
+  .pg-req-details[open] > summary::before, .pg-raw[open] > summary::before { transform: rotate(90deg); }
+  .pg-req-details > summary:hover, .pg-raw > summary:hover { border-color: #9ca3af; color: #1c1528; background: #e9edf1; }
+  .pg-req-head { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 5px; font-size: 11px; color: #8c959f; text-transform: uppercase; letter-spacing: 0.4px; }
+  .pg-copy { background: #f0f1f3; border: 1px solid #d0d3d8; color: #5a6270; border-radius: 5px; padding: 2px 8px; font-size: 11px; cursor: pointer; }
+  .pg-copy:hover { background: #3d434d; color: #fff; border-color: #3d434d; }
+
+  .pg-json {
+    background: #1f2328; color: #e5e7eb; border-radius: 8px; padding: 14px 16px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.65;
+    overflow-x: auto; white-space: pre; margin: 0; max-height: 460px; overflow-y: auto;
+  }
+  .pg-json-sm { max-height: 220px; font-size: 11px; }
+  /* Request panel: wrap long lines instead of cramped horizontal scroll */
+  #pgRequestPreview, #pgCurl { white-space: pre-wrap; word-break: break-word; }
+
+  .pg-results { display: block; }
+  .pg-results.pg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .pg-empty { color: #8c959f; font-size: 13px; font-style: italic; padding: 30px 0; }
+
+  .pg-pane { border: 1px solid #e4e6e9; border-radius: 10px; overflow: hidden; background: #fff; min-width: 0; }
+  .pg-pane-title { padding: 8px 14px; background: #f1f5f9; border-bottom: 1px solid #e4e6e9; font-size: 12px; font-weight: 700; color: #3d434d; font-family: 'SF Mono', monospace; }
+  .pg-pane-body { padding: 12px 14px; }
+  .pg-loading { color: #8c959f; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+
+  .pg-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .pg-pill { font-size: 11px; padding: 3px 9px; border-radius: 20px; background: #f0f1f3; color: #5a6270; font-weight: 600; font-family: 'SF Mono', monospace; }
+  .pg-pill.pg-ok { background: #ecfdf5; color: #059669; }
+  .pg-pill.pg-bad { background: #fef2f2; color: #dc2626; }
+  .pg-pill.pg-muted { background: transparent; color: #8c959f; font-weight: 400; }
+  .pg-pill.pg-cost { background: #fdf4e7; color: #b0895a; }
+  .pg-pill.pg-pill-click { cursor: pointer; }
+  .pg-pill.pg-pill-click::after { content: " ›"; opacity: .6; }
+  .pg-pill.pg-pill-click:hover { background: #f7e8d3; }
+
+  .pg-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; border-radius: 8px; padding: 10px 12px; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .pg-answer { font-size: 13px; line-height: 1.7; color: #5a6270; white-space: pre-wrap; margin-bottom: 12px; }
+
+  .pg-cards { display: flex; flex-direction: column; gap: 10px; }
+  .pg-card { border: 1px solid #f0f1f3; border-radius: 8px; padding: 10px 12px; background: #ffffff; }
+  .pg-card-head { display: flex; align-items: center; gap: 7px; }
+  .pg-favicon { width: 15px; height: 15px; border-radius: 3px; flex-shrink: 0; }
+  .pg-card-title { font-size: 13px; font-weight: 600; color: #3d434d; text-decoration: none; word-break: break-word; }
+  .pg-card-title:hover { text-decoration: underline; }
+  .pg-card-meta { font-size: 11px; color: #8c959f; margin-top: 3px; }
+  .pg-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .pg-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: #f0f1f3; color: #5a6270; font-weight: 600; font-family: 'SF Mono', monospace; }
+  .pg-badge-hot { background: #eceef1; color: #3d434d; }
+  .pg-badge-click { cursor: pointer; border: 1px solid transparent; }
+  .pg-badge-click::after { content: "›"; margin-left: 4px; opacity: .5; }
+  .pg-badge-click:hover { border-color: #b7bdc4; background: #e4e6e9; }
+
+  /* Field popover — full content of a clicked pill (text / list / JSON tree) */
+  .pg-pop { position: fixed; z-index: 10000; display: none; width: 440px; max-width: calc(100vw - 24px);
+    background: #fff; border: 1px solid #d0d3d8; border-radius: 10px; box-shadow: 0 12px 36px rgba(0,0,0,.2); }
+  .pg-pop.show { display: block; }
+  .pg-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 8px 9px 13px; border-bottom: 1px solid #eceef0; }
+  .pg-pop-title { font: 600 12px 'SF Mono', monospace; color: #3d434d; }
+  .pg-pop-x { border: none; background: none; font-size: 19px; line-height: 1; color: #8c959f; cursor: pointer; padding: 0 6px; }
+  .pg-pop-x:hover { color: #1f2328; }
+  .pg-pop-body { padding: 12px 13px; max-height: min(52vh, 440px); overflow: auto; }
+  .pg-pop-text { font-size: 13px; line-height: 1.55; color: #1f2328; white-space: pre-wrap; word-break: break-word; }
+  .pg-pop-list { margin: 0; padding-left: 18px; }
+  .pg-pop-list li { font-size: 13px; line-height: 1.5; color: #1f2328; margin-bottom: 9px; word-break: break-word; }
+  .pg-pop-body .pg-tree { margin: 0; max-height: none; }
+
+  /* Always-visible, clear vertical scrollbars on scrollable views */
+  .pg-tree, .pg-json { scrollbar-width: thin; scrollbar-color: #5a636e #2a2f36; }
+  .pg-pop-body { scrollbar-width: thin; scrollbar-color: #c2c8ce #eef0f2; }
+  .pg-tree::-webkit-scrollbar, .pg-json::-webkit-scrollbar, .pg-pop-body::-webkit-scrollbar { width: 12px; height: 12px; }
+  .pg-tree::-webkit-scrollbar-track, .pg-json::-webkit-scrollbar-track { background: #2a2f36; border-radius: 10px; }
+  .pg-tree::-webkit-scrollbar-thumb, .pg-json::-webkit-scrollbar-thumb { background: #5a636e; border-radius: 10px; border: 3px solid #2a2f36; }
+  .pg-tree::-webkit-scrollbar-thumb:hover, .pg-json::-webkit-scrollbar-thumb:hover { background: #737d89; }
+  .pg-pop-body::-webkit-scrollbar-track { background: #eef0f2; border-radius: 10px; }
+  .pg-pop-body::-webkit-scrollbar-thumb { background: #c2c8ce; border-radius: 10px; border: 3px solid #eef0f2; }
+  .pg-pop-body::-webkit-scrollbar-thumb:hover { background: #a6adb5; }
+  .pg-entity { margin-top: 8px; }
+  .pg-entity summary { cursor: pointer; font-size: 11px; color: #3d434d; font-weight: 600; font-family: 'SF Mono', monospace; }
+  .pg-snippet { font-size: 12px; color: #5a6270; line-height: 1.5; margin-top: 7px; }
+  .pg-raw { margin-top: 14px; }
+  /* Wrap the raw response so long lines never look truncated (full body, no cut) */
+  .pg-raw .pg-json { margin-top: 8px; white-space: pre-wrap; word-break: break-word; }
+
+  /* Response viewer toolbar: Tree | Raw toggle + Copy */
+  .pg-raw-tools { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .pg-seg { display: inline-flex; border: 1px solid #d0d3d8; border-radius: 7px; overflow: hidden; }
+  .pg-seg-btn { border: none; background: #fff; color: #5a6270; font: 600 12px 'Outfit', sans-serif; padding: 5px 12px; cursor: pointer; }
+  .pg-seg-btn + .pg-seg-btn { border-left: 1px solid #d0d3d8; }
+  .pg-seg-btn.active { background: #3d434d; color: #fff; }
+  .pg-copy { margin-left: auto; border: 1px solid #d0d3d8; background: #fff; color: #5a6270; font: 600 12px 'Outfit', sans-serif; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+  .pg-copy:hover { border-color: #9ca3af; color: #1f2328; }
+  .pg-copy.copied { background: #059669; border-color: #059669; color: #fff; }
+
+  /* Collapsible JSON tree */
+  .pg-tree {
+    margin-top: 8px; background: #1f2328; color: #e5e7eb; border-radius: 8px; padding: 12px 14px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.6;
+    max-height: 460px; overflow: auto;
+  }
+  .pg-tree .jt-children { padding-left: 15px; border-left: 1px solid #3a4048; margin-left: 4px; }
+  .pg-tree .jt-node.collapsed > .jt-children { display: none; }
+  .pg-tree .jt-head { cursor: pointer; display: flex; align-items: flex-start; }
+  .pg-tree .jt-head:hover { background: rgba(255,255,255,.05); border-radius: 4px; }
+  .pg-tree .jt-tri::before { content: "\25BE"; display: inline-block; width: 12px; color: #8c959f; font-size: 10px; transition: transform .12s; }
+  .pg-tree .jt-node.collapsed > .jt-head .jt-tri::before { transform: rotate(-90deg); }
+  .pg-tree .jt-tri.jt-empty::before { content: ""; }
+  .pg-tree .jt-row { padding-left: 12px; display: flex; align-items: flex-start; }
+  .pg-tree .jt-key { color: #9cc3ff; white-space: nowrap; }
+  .pg-tree .jt-summary { color: #8c959f; }
+  .pg-tree .jt-str { color: #9ece9e; word-break: break-word; overflow-wrap: anywhere; }
+  .pg-tree a.jt-link { color: #7fb0ff; text-decoration: underline; }
+  .pg-tree .jt-num { color: #e0b978; }
+  .pg-tree .jt-bool { color: #c99bec; }
+  .pg-tree .jt-null { color: #8c959f; font-style: italic; }
+
+  /* ─── About tab ──────────────────────────────────────────────────── */
+  .about-section { padding: 28px 32px 48px; max-width: 720px; margin: 0 auto; }
+  .about-section h2 { font-size: 15px; font-weight: 600; color: #1f2328; margin: 0 0 10px; }
+  .about-sub { font-size: 12px; font-weight: 400; color: #8c959f; font-family: 'SF Mono', monospace; }
+  .about-section p { font-size: 13.5px; line-height: 1.7; color: #5a6270; margin: 0 0 10px; }
+  .about-divider { border: none; border-top: 1px solid #e4e6e9; margin: 26px 0; }
+  .about-note { font-size: 12.5px; color: #5a6270; background: #f1f5f9; border-left: 3px solid #3d434d; padding: 10px 14px; border-radius: 0 6px 6px 0; }
+  .about-steps { font-size: 13.5px; line-height: 1.8; color: #5a6270; padding-left: 22px; margin: 0 0 10px; }
+
+  .arch-tree {
+    background: #1f2328; color: #e5e7eb; border-radius: 10px; padding: 16px 18px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; line-height: 1.65;
+    overflow-x: auto; white-space: pre; margin: 14px 0;
+  }
+  .arch-tree .ah { color: #c8ccd2; font-weight: 600; }
+  .arch-tree .af { color: #aab4c0; }
+  .arch-tree .ac { color: #8c959f; }
+
+  .about-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; background: #fff; border: 1px solid #e4e6e9; border-radius: 8px; overflow: hidden; }
+  .about-table th { text-align: left; padding: 9px 13px; background: #f1f5f9; border-bottom: 1px solid #e4e6e9; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #5a6270; }
+  .about-table td { padding: 9px 13px; border-bottom: 1px solid #f0f1f3; vertical-align: top; line-height: 1.55; }
+  .about-table tr:last-child td { border-bottom: none; }
+  .about-table td:first-child { white-space: nowrap; font-family: 'SF Mono', monospace; color: #3d434d; font-weight: 600; }
+  .about-table code, .about-section code { background: #f0f1f3; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: 'SF Mono', monospace; color: #3d434d; }
+
+  .flow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .flow-box { border-radius: 8px; padding: 9px 13px; font-size: 12px; font-weight: 600; color: #1f2328; text-align: center; line-height: 1.3; }
+  .flow-box small { display: block; font-weight: 400; font-size: 10.5px; color: #5a6270; margin-top: 2px; }
+  .flow-box.user { background: #f0f1f3; }
+  .flow-box.get, .flow-box.render { background: #ecfdf5; }
+  .flow-box.post, .flow-box.reg { background: #eceef1; }
+  .flow-box.api { background: #fce8d8; }
+  .flow-box.answer { background: #dff3f0; }
+  .flow-arrow { color: #8c959f; font-size: 15px; }
+
+  /* ─── Compare picker ─────────────────────────────────────────────── */
+  .cmp-select { background: #fff; color: #1f2328; border: 1px solid #d0d3d8; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .cmp-select:focus { border-color: #8c959f; outline: none; }
+  .cmp-side { display: flex; gap: 6px; align-items: center; }
+  .cmp-side .cmp-select { padding: 8px 10px; font-size: 13px; }
+  .cmp-ep { font-weight: 500; color: #5a6270; }
+  .cmp-vs { font-size: 13px; font-weight: 700; color: #8c959f; }
+  .cmp-query { flex: 1; min-width: 260px; }
+  /* Two configurable sides — each a provider/endpoint picker + its own form. */
+  .cmp-config { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 18px; }
+  .cmp-col { border: 1px solid #e4e6e9; border-radius: 10px; padding: 14px; background: #fafafa; }
+  .cmp-col-head { display: flex; gap: 8px; margin-bottom: 14px; }
+  .cmp-col-head .cmp-select { flex: 1; min-width: 0; padding: 8px 10px; font-size: 13px; }
+  .cmp-col .pg-form { background: transparent; }
+  #cmpResults .answer-pane { opacity: 1; }
+  @media (max-width: 860px) { .cmp-config { grid-template-columns: 1fr; } }
+
+
+  /* Skeleton shimmer for loading placeholders (STYLE_GUIDE §15) */
+  .skel {
+    background: linear-gradient(90deg, #eef0f2 25%, #f6f7f9 37%, #eef0f2 63%);
+    background-size: 400% 100%; border-radius: 8px; animation: skel 1.4s ease infinite;
+  }
+  @keyframes skel { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+  /* Loading indicator: spinner + label + live elapsed timer + indeterminate bar */
+  .pg-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 11px; padding: 44px 20px; text-align: center; }
+  .pg-loading-spin { width: 26px; height: 26px; border: 3px solid #e4e6e9; border-top-color: #3d434d; border-radius: 50%; animation: spin .8s linear infinite; }
+  .pg-loading-text { font-size: 13px; font-weight: 600; color: #5a6270; }
+  .pg-loading-sub { font-size: 12px; color: #8c959f; font-variant-numeric: tabular-nums; }
+  .pg-loading-bar { width: 190px; max-width: 60%; height: 3px; background: #e4e6e9; border-radius: 2px; overflow: hidden; position: relative; }
+  .pg-loading-bar::before { content: ""; position: absolute; top: 0; left: 0; height: 100%; width: 40%; background: #3d434d; border-radius: 2px; animation: pg-slide 1.1s ease-in-out infinite; }
+  @keyframes pg-slide { 0% { left: -40%; } 100% { left: 100%; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- HEADER + TABS                                                      -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="header">
+  <h1>Search API Playground</h1>
+  <div class="subtitle">Try search endpoints from multiple providers — inspect the raw response for every option.</div>
+  <div class="tab-bar" id="tabBar">
+    <button class="tab-btn active" data-tab="tab-about" onclick="switchTab('tab-about', this)">About</button>
+    <!-- Compare + provider tabs injected here (alpha-sorted) by playground.js -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- PROVIDER PLAYGROUND (shared panel across all provider tabs)        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-playground">
+  <div class="tab-intro">
+    <strong>Provider playground</strong> — pick a provider tab, choose an endpoint, set options, and hit <strong>Send</strong> to inspect the raw response. Each provider's key lives in <code>env.txt</code>.
+    <br><small style="color:#8c959f">Some endpoints support a <strong>Compare</strong> mode — pick a field, then fire the same query once per value and see the shapes side by side (Exa <code>/search</code> across <em>category</em> or <em>type</em>, Parallel <code>entity-search</code> across <em>entity_type</em>: people vs companies).</small>
+  </div>
+
+  <div class="pg-wrap">
+    <div class="pg-left">
+      <div class="pg-endpoint-bar">
+        <label class="pg-endpoint-label">Endpoint</label>
+        <select id="pgEndpoint" class="pg-input pg-select"></select>
+        <a id="pgDocsLink" class="pg-docs-link" target="_blank" rel="noopener">API docs ↗</a>
+      </div>
+      <div class="pg-endpoint-desc" id="pgEndpointMeta"></div>
+
+      <div class="pg-compare-wrap" id="pgCompareWrap">
+        <label class="pg-bool"><input type="checkbox" id="pgCompareToggle" class="pg-check"> <span>Compare mode — fan the same query across one field's values</span></label>
+        <div id="pgCompareBody" style="display:none">
+          <div class="pg-compare-on" id="pgCompareOn"></div>
+          <div class="pg-cat-checks" id="pgCatChecks"></div>
+        </div>
+      </div>
+
+      <label class="pg-dep-toggle" id="pgDepToggle" style="display:none">
+        <input type="checkbox" id="pgDepCheck" class="pg-check">
+        <span>Show deprecated fields <span class="pg-dep-count"></span></span>
+      </label>
+
+      <div class="pg-form" id="pgForm"></div>
+
+      <button id="pgSendBtn" class="pg-send">Send request</button>
+
+      <details class="pg-req-details">
+        <summary>Request body &amp; cURL</summary>
+        <div class="pg-req-head"><span>JSON body</span><button class="pg-copy" onclick="copyText('pgRequestPreview', this)">Copy</button></div>
+        <pre class="pg-json" id="pgRequestPreview">{}</pre>
+        <div class="pg-req-head"><span>cURL</span><button class="pg-copy" onclick="copyText('pgCurl', this)">Copy</button></div>
+        <pre class="pg-json" id="pgCurl"></pre>
+      </details>
+    </div>
+
+    <div class="pg-right">
+      <div class="pg-results" id="pgResults">
+        <div class="pg-empty">Build a request on the left and hit <strong>Send</strong> to see the response.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- COMPARE TAB — provider-vs-provider picker                          -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-compare">
+  <div class="tab-intro">
+    <strong>Head-to-head</strong> — configure any two comparable endpoints, ask one question, and see each endpoint's <strong>raw response</strong> side by side (the same view as the provider tabs).
+    <br><small style="color:#8c959f">The shared question is sent to each side's query field; set any other parameters per side. Deep-research calls can take 30s–3min. Uses the keys in <code>env.txt</code>.</small>
+  </div>
+
+  <div class="input-bar" style="flex-wrap:wrap">
+    <input type="text" id="cmpQuery" class="cmp-query" placeholder="Ask one question — sent to both endpoints…"
+           value="Who won the 2026 Winter Olympics men's hockey gold?">
+    <button id="cmpRunBtn" onclick="runCompare()">Compare</button>
+    <button id="cmpStopBtn" class="stop-btn" onclick="stopCompare()" style="display:none">Stop</button>
+  </div>
+
+  <div class="cmp-config">
+    <div class="cmp-col">
+      <div class="cmp-col-head">
+        <select id="cmpLeftProvider" class="cmp-select"></select>
+        <select id="cmpLeftEndpoint" class="cmp-select cmp-ep"></select>
+      </div>
+      <div class="pg-form" id="cmpLeftForm"></div>
+    </div>
+    <div class="cmp-col">
+      <div class="cmp-col-head">
+        <select id="cmpRightProvider" class="cmp-select"></select>
+        <select id="cmpRightEndpoint" class="cmp-select cmp-ep"></select>
+      </div>
+      <div class="pg-form" id="cmpRightForm"></div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="cmpStatus"><span class="spinner"></span> <span id="cmpStatusText">Starting…</span></div>
+
+  <div id="cmpResults" style="display:none">
+    <div class="answers">
+      <div class="answer-pane">
+        <div class="pane-header"><h3 id="cmpLeftTitle">Left</h3></div>
+        <div class="pg-pane-body" id="cmpLeftBody"></div>
+      </div>
+      <div class="answer-pane">
+        <div class="pane-header"><h3 id="cmpRightTitle">Right</h3></div>
+        <div class="pg-pane-body" id="cmpRightBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- ABOUT TAB — architecture                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-about">
+<div class="about-section">
+
+  <h2>What this is</h2>
+  <p>A <strong>schema-driven playground for search APIs</strong> across providers, with two modes:</p>
+  <ul style="font-size:13.5px;line-height:1.7;color:#5a6270;padding-left:22px;margin:0 0 10px">
+    <li><strong>Playground</strong> — each provider is a tab (<strong>Brave · Exa · Parallel · Perplexity · Tavily · You.com</strong>); pick an endpoint, fill a form generated from its schema, and inspect the raw response.</li>
+    <li><strong>Compare</strong> — configure <em>any two comparable</em> endpoints (provider + endpoint + parameters), ask one question, and see each endpoint's raw response side by side — the same view as the provider tabs.</li>
+  </ul>
+
+  <hr class="about-divider">
+
+  <h2>Design principle — one provider, one set of files</h2>
+  <p>The goal: if someone wants to work on Perplexity, its code is <strong>one clear package</strong>, not logic strewn across the server and the frontend. So every provider is a self-contained package that implements a shared contract, the server is a thin dispatcher over a registry, and the frontend is a generic renderer with <em>no</em> provider-specific code.</p>
+
+  <div class="arch-tree">competitor_search/
+├── <span class="ah">providers/</span>            <span class="ac"># one package per provider — the core of the app</span>
+│   ├── <span class="af">base.py</span>          <span class="ac"># the contract: Param · Endpoint · Provider (+ compare)</span>
+│   ├── <span class="af">registry.py</span>      <span class="ac"># the one list of which providers exist</span>
+│   ├── <span class="ah">exa/</span>             <span class="ac"># every provider/ folder has the same 3 files (below) — Exa shown as the example</span>
+│   │   ├── <span class="af">__init__.py</span>  <span class="ac"># exports the Provider subclass</span>
+│   │   ├── <span class="af">provider.py</span>  <span class="ac"># ExaProvider: identity, auth, endpoints, call()</span>
+│   │   └── <span class="af">endpoints.py</span> <span class="ac"># /search /contents /answer schemas</span>
+│   ├── <span class="ah">youdotcom/</span>       <span class="ac"># You.com — search / contents / research / finance_research</span>
+│   ├── <span class="ah">perplexity/</span>      <span class="ac"># Perplexity Agent API (Bearer auth, streaming call())</span>
+│   ├── <span class="ah">parallel/</span>        <span class="ac"># /v1/search + /v1beta/search + /v1/tasks/runs (Task API, async) + FindAll</span>
+│   ├── <span class="ah">tavily/</span>          <span class="ac"># Tavily — search / extract / map / crawl (Bearer)</span>
+│   └── <span class="ah">brave/</span>           <span class="ac"># Brave — GET query-param API (web/news/images/videos + suggest/spellcheck/summarizer/local)</span>
+├── <span class="ah">app/</span>                 <span class="ac"># thin web layer over providers/</span>
+│   ├── <span class="af">server.py</span>        <span class="ac"># /api/providers · /api/call · /api/compare</span>
+│   ├── <span class="af">playground.js</span>    <span class="ac"># generic renderer — fetches catalog, no per-provider code</span>
+│   └── <span class="af">index.html</span>       <span class="ac"># tabs, form shell, compare picker, this About page</span>
+└── <span class="ah">comparison/</span>          <span class="ac"># perplexity_runner.py — SSE Agent-API runner used by call()</span></div>
+
+  <hr class="about-divider">
+
+  <h2>The core classes <span class="about-sub">providers/base.py</span></h2>
+  <p>Three classes are the whole contract. A new provider is usually just declarative — no imperative code.</p>
+  <table class="about-table">
+    <thead><tr><th>Class</th><th>Is</th><th>Key parts</th></tr></thead>
+    <tbody>
+      <tr><td><code>Param</code></td><td>One request-body field</td><td><code>name</code>, <code>type</code> (string·text·int·bool·enum·csv·date·json·group), <code>values</code>, nested <code>fields</code> for objects. Flags steer the form: <code>required</code>, <code>optional</code> (group enable), <code>deprecated</code> (hidden behind a toggle), <code>advanced</code> (tucked into a collapsed <em>Advanced options</em> group). Renders to a form control; serialized via <code>to_dict()</code>.</td></tr>
+      <tr><td><code>Endpoint</code></td><td>One API operation</td><td><code>method</code>, <code>path</code>, and its list of <code>Param</code>s.</td></tr>
+      <tr><td><code>Provider</code></td><td>A provider</td><td><code>base_url</code>, <code>auth_header</code>/<code>auth_prefix</code>, <code>key_env</code>, <code>endpoints</code>. <code>call()</code> runs the request behind both the playground and Compare (default = plain JSON POST; override for streaming/async); <code>catalog()</code> serializes it for the UI.</td></tr>
+    </tbody>
+  </table>
+  <p class="about-note">Providers differ — Exa is a plain JSON POST with <code>x-api-key</code>; Perplexity's agent is SSE-streaming with <code>Bearer</code> auth. The base handles the common case; a provider that needs streaming or custom auth <strong>overrides <code>call()</code> inside its own package</strong> (Perplexity does). Consistency from the base, isolation per provider.</p>
+
+  <hr class="about-divider">
+
+  <h2>Data flow</h2>
+  <div class="flow-row">
+    <div class="flow-box user">Browser</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box get">GET /api/providers<br><small>catalog of providers + endpoint schemas</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box render">playground.js<br><small>renders tabs + forms</small></div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box user">Send request</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box post">POST /api/call<br><small>{provider, endpoint, params}</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box reg">registry.get(provider)<br><small>.call(endpoint, params)</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box api">Provider API<br><small>key injected server-side</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box answer">Raw response</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box user">Compare</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box post">POST /api/compare<br><small>{left, right} — each {provider, endpoint, params}</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box reg">left.call() + right.call()<br><small>parallel, in threads</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box answer">two raw responses, side by side</div>
+  </div>
+  <p class="about-note">The request-body schema has a <strong>single source of truth</strong> — the provider's Python package. The frontend never hardcodes it; it fetches the catalog and renders. So schema and routing can't drift apart. Any endpoint with a <code>compare_query_field</code> is automatically selectable in the Compare picker.</p>
+  <p class="about-note">The generated form keeps a clean primary view: short fields pair up two-per-row, roomy fields span the row, help lives in a hover <strong>ⓘ</strong> tooltip, booleans are toggle switches, and less-common params collapse into <strong>Advanced options</strong>.</p>
+
+  <hr class="about-divider">
+
+  <h2>Adding a provider</h2>
+  <ol class="about-steps">
+    <li>Create <code>providers/&lt;name&gt;/</code> with a <code>Provider</code> subclass and its endpoint schemas.</li>
+    <li>Register it in <code>providers/registry.py</code>.</li>
+    <li>Add its API key to <code>env.txt</code>.</li>
+  </ol>
+  <p>It then appears everywhere — a playground tab, its endpoint dropdown, and generated request forms — with no changes to <code>server.py</code> or <code>playground.js</code>. Any endpoint that sets <code>compare_query_field</code> is automatically selectable in the Compare picker. Override <code>Provider.call()</code> only if the API streams, is async, or authenticates unusually.</p>
+
+  <p class="about-note" style="margin-top:20px">This project is <strong>self-documenting</strong>: any change that alters behavior, APIs, or structure updates its docs in the same change (see <code>CLAUDE.md</code> and <code>.claude/skills/self-documenting/</code>). If this page looks wrong, the code changed without its docs — that's a bug.</p>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<script>
+// ─── SSE stream helper ──────────────────────────────────────────────
+async function streamSSE(url, body, onEvent, onError, signal) {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!resp.ok) {
+    try {
+      const data = await resp.json();
+      onError(data.error || `Server returned ${resp.status}`);
+    } catch (_) {
+      onError(`Server returned ${resp.status}`);
+    }
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (signal?.aborted) { reader.cancel(); break; }
+    buffer += decoder.decode(value, { stream: true });
+
+    let boundary;
+    while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+      const chunk = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      if (!chunk.trim()) continue;
+
+      let eventName = '', eventData = '';
+      for (const line of chunk.split('\n')) {
+        if (line.startsWith('event: ')) eventName = line.slice(7).trim();
+        else if (line.startsWith('data: ')) eventData += line.slice(6);
+      }
+      if (eventName && eventData) {
+        try { onEvent(eventName, JSON.parse(eventData)); }
+        catch (e) { console.error('SSE parse error:', eventName, e); onError('Response parse error — stream may be corrupt'); }
+      }
+    }
+  }
+
+  if (buffer.trim()) {
+    let eventName = '', eventData = '';
+    for (const line of buffer.split('\n')) {
+      if (line.startsWith('event: ')) eventName = line.slice(7).trim();
+      else if (line.startsWith('data: ')) eventData += line.slice(6);
+    }
+    if (eventName && eventData) {
+      try { onEvent(eventName, JSON.parse(eventData)); }
+      catch (e) { console.error('SSE final parse error:', e); }
+    }
+  }
+}
+
+function safeUrl(u) {
+  try { const p = new URL(u); return (p.protocol === 'https:' || p.protocol === 'http:') ? u : '#'; }
+  catch { return '#'; }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function renderMarkdown(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/^---$/gm, '<hr>');
+  html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  html = html.replace(/\[(\d+)\]/g, '<sup class="cite">[$1]</sup>');
+  html = html.replace(/^(\d+)\. (.+)$/gm, '<li value="$1">$2</li>');
+  html = html.replace(/^[•\-] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<\/li>)\n\n(<li)/g, '$1\n$2');
+  html = html.replace(/((?:<li value="[^"]*">.*?<\/li>\n?)+)/g, '<ol>$1</ol>');
+  html = html.replace(/((?:<li>.*?<\/li>\n?)+)/g, '<ul>$1</ul>');
+  html = html.replace(/<\/li>\n/g, '</li>');
+  html = html.split(/\n{2,}/).map(p => {
+    const trimmed = p.trim();
+    if (/^<(h[1-4]|hr|ol|ul|li)/.test(trimmed)) return trimmed;
+    return `<p>${trimmed}</p>`;
+  }).join('');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// COMPARE — run one question through two fully-configured endpoints and show
+// each endpoint's raw response side by side (same view as the provider tabs).
+// ═══════════════════════════════════════════════════════════════════════
+let _cmpController = null;
+const cmpState = { left: {}, right: {} };
+const Cap = s => s[0].toUpperCase() + s.slice(1);
+
+// Called by playground.js once the provider catalog has loaded. Each side is a
+// two-level picker (company → comparable endpoint) plus that endpoint's own
+// parameter form.
+window.initComparePicker = function () {
+  const cat = window.PG_CATALOG;
+  if (!cat) return;
+  const comparable = cat.order.filter(id => cat.providers[id].comparable);
+  const setup = (side, defProv) => {
+    const provSel = document.getElementById('cmp' + Cap(side) + 'Provider');
+    const epSel = document.getElementById('cmp' + Cap(side) + 'Endpoint');
+    provSel.innerHTML = '';
+    for (const id of comparable) provSel.appendChild(new Option(cat.providers[id].label, id));
+    provSel.value = defProv;
+    provSel.onchange = () => { cmpFillEndpoints(provSel, epSel); cmpBuildSideForm(side); };
+    epSel.onchange = () => cmpBuildSideForm(side);
+    cmpFillEndpoints(provSel, epSel);
+    cmpBuildSideForm(side);
+  };
+  setup('left', comparable[0]);
+  setup('right', comparable[1] || comparable[0]);
+};
+
+function cmpShortLabel(ep) { return (ep.label || '').replace(/^(GET|POST)\s+/, '').split(' — ')[0]; }
+function cmpFillEndpoints(provSel, epSel) {
+  const p = window.PG_CATALOG.providers[provSel.value];
+  epSel.innerHTML = '';
+  for (const eid of p.endpointOrder.filter(e => p.endpoints[e].comparable))
+    epSel.appendChild(new Option(cmpShortLabel(p.endpoints[eid]), eid));
+}
+
+// Build the per-side parameter form. Reuses the playground's schema renderer,
+// skipping the endpoint's query field — that's driven by the shared query box.
+function cmpBuildSideForm(side) {
+  const provider = document.getElementById('cmp' + Cap(side) + 'Provider').value;
+  const eid = document.getElementById('cmp' + Cap(side) + 'Endpoint').value;
+  const ep = window.PG_CATALOG.providers[provider].endpoints[eid];
+  const host = document.getElementById('cmp' + Cap(side) + 'Form');
+  host.innerHTML = '';
+  const skip = new Set(ep.compareQueryField ? [ep.compareQueryField] : []);
+  cmpState[side] = { provider, eid, ep, readers: renderSchemaInto(host, ep.schema, skip) };
+}
+
+function setCmpStatus(t) { document.getElementById('cmpStatusText').textContent = t; }
+function stopCompare() { if (_cmpController) _cmpController.abort(); }
+
+async function runCompare() {
+  const query = document.getElementById('cmpQuery').value.trim();
+  if (!query) return;
+  const cat = window.PG_CATALOG;
+
+  // Assemble each side's call: form params + the shared query injected into the
+  // endpoint's compare_query_field (as a list for csv fields).
+  const build = side => {
+    const st = cmpState[side];
+    const params = {};
+    for (const r of st.readers) { const v = r.read(); if (v !== undefined) params[r.name] = v; }
+    const qf = st.ep.compareQueryField;
+    if (qf) {
+      const def = st.ep.schema.find(p => p.name === qf);
+      params[qf] = (def && def.type === 'csv') ? [query] : query;
+    }
+    return { provider: st.provider, endpoint: st.eid, params };
+  };
+  const left = build('left'), right = build('right');
+
+  _cmpController = new AbortController();
+  const btn = document.getElementById('cmpRunBtn');
+  btn.disabled = true; btn.textContent = 'Running…';
+  document.getElementById('cmpStopBtn').style.display = '';
+  document.getElementById('cmpStatus').classList.add('visible');
+  setCmpStatus('Running both endpoints…');
+  document.getElementById('cmpResults').style.display = 'block';
+
+  const label = s => cat.providers[s.provider].label + ' · ' + s.endpoint;
+  resetCmpPane('Left', label(left));
+  resetCmpPane('Right', label(right));
+
+  try {
+    await streamSSE('/api/compare', { left, right },
+      handleCmpEvent,
+      msg => setCmpStatus('Error: ' + msg),
+      _cmpController.signal);
+  } catch (err) {
+    if (err.name !== 'AbortError') setCmpStatus('Error: ' + (err.message || err));
+  }
+  _cmpController = null;
+  document.getElementById('cmpStopBtn').style.display = 'none';
+  document.getElementById('cmpStatus').classList.remove('visible');
+  btn.disabled = false; btn.textContent = 'Compare';
+}
+
+const _cmpLoad = {};
+function resetCmpPane(Side, label) {
+  document.getElementById('cmp' + Side + 'Title').textContent = label;
+  // startLoading (from playground.js): spinner + label + live elapsed timer.
+  _cmpLoad[Side] = startLoading(document.getElementById('cmp' + Side + 'Body'), 'Querying ' + label + '…');
+}
+
+function handleCmpEvent(event, data) {
+  switch (event) {
+    case 'status': if (data.message) setCmpStatus(data.message); break;
+    case 'result': {
+      const Side = data.side === 'left' ? 'Left' : 'Right';
+      _cmpLoad[Side] && _cmpLoad[Side].stop();
+      const body = document.getElementById('cmp' + Side + 'Body');
+      // wrapper is the raw {ok,status,elapsed_ms,url,request,body} or {error} —
+      // render it with the exact same view the provider tabs use.
+      renderResponse(body, { data: data.wrapper || { error: data.error || 'No response' } });
+      break;
+    }
+    case 'done': document.getElementById('cmpStatus').classList.remove('visible'); break;
+    case 'error': setCmpStatus('Error: ' + (data.message || '')); break;
+  }
+}
+
+// Cmd/Ctrl+Enter in the query box runs the comparison.
+document.getElementById('cmpQuery').addEventListener('keydown',
+  e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) runCompare(); });
+</script>
+
+<script>
+// ─── Tab switching (shared across provider tabs + comparison) ───────────────
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+</script>
+<script src="/playground.js"></script>
+
+</body>
+</html>

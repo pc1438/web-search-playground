@@ -1,0 +1,16 @@
+# Secrets
+env.txt
+.env
+
+# Server logs
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Claude Code: keep the run config, ignore assistant-only workflow files
+.claude/*
+!.claude/launch.json
