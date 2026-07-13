@@ -21,7 +21,7 @@ a server-side catalog, so the request schema and the UI can't drift apart.
 | **Exa** | `/search`, `/contents`, `/answer` | `x-api-key` |
 | **You.com** | `/v1/search`, `/v1/contents`, `/v1/research`, `/v1/finance_research` | `X-API-Key` |
 | **Perplexity** | `/search`, `/v1/agent` (BYOLLM, streaming) | Bearer |
-| **Parallel** | `/v1/search`, `/v1beta/search`, `/v1/tasks/runs` (Task API), `/v1beta/findall/entity-search` | `x-api-key` |
+| **Parallel** | `/v1/search` (`mode`: turbo / basic / advanced — turbo = Search Turbo), `/v1beta/search`, `/v1/tasks/runs` (Task API), `/v1beta/findall/entity-search` | `x-api-key` |
 | **Tavily** | `/search`, `/extract`, `/map`, `/crawl` | Bearer |
 | **Brave** | web / news / images / videos search, suggest, spellcheck, summarizer, local POIs & descriptions | `X-Subscription-Token` (GET) |
 | **SerpApi** | `/search` across engines (Google, Bing, DuckDuckGo, YouTube, …) via an `engine` selector | `api_key` query param (GET) |
