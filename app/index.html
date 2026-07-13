@@ -180,6 +180,13 @@
     align-items: center;
   }
   .answer-pane .pane-header h3 { font-size: 14px; font-weight: 600; color: #1f2328; }
+  /* Per-side parameter chips (differentiate two calls to the same endpoint) */
+  .cmp-params { display: flex; flex-wrap: wrap; gap: 5px; padding: 10px 20px 0; }
+  .cmp-param {
+    font: 500 11px 'SF Mono', 'Fira Code', monospace; color: #5a6270;
+    background: #f0f1f3; border: 1px solid #e4e6e9; border-radius: 5px; padding: 2px 7px;
+  }
+  .cmp-param.cmp-param-diff { background: #fdf4e7; border-color: #ebd6b3; color: #a05020; font-weight: 700; }
   /* ── Code info button ───────────────────────────────────────── */
   .info-btn {
     display: inline-flex; align-items: center; justify-content: center;
@@ -699,10 +706,12 @@
     <div class="answers">
       <div class="answer-pane">
         <div class="pane-header"><h3 id="cmpLeftTitle">Left</h3></div>
+        <div class="cmp-params" id="cmpLeftParams"></div>
         <div class="pg-pane-body" id="cmpLeftBody"></div>
       </div>
       <div class="answer-pane">
         <div class="pane-header"><h3 id="cmpRightTitle">Right</h3></div>
+        <div class="cmp-params" id="cmpRightParams"></div>
         <div class="pg-pane-body" id="cmpRightBody"></div>
       </div>
     </div>
@@ -995,6 +1004,7 @@ async function runCompare() {
   const label = s => cat.providers[s.provider].label + ' · ' + s.endpoint;
   resetCmpPane('Left', label(left));
   resetCmpPane('Right', label(right));
+  paintCmpParams(left, right);
 
   try {
     await streamSSE('/api/compare', { left, right },
@@ -1008,6 +1018,30 @@ async function runCompare() {
   document.getElementById('cmpStopBtn').style.display = 'none';
   document.getElementById('cmpStatus').classList.remove('visible');
   btn.disabled = false; btn.textContent = 'Compare';
+}
+
+// Show each side's set parameters (minus the shared query) as chips under its
+// title, so two calls to the same endpoint are distinguishable. Params that
+// differ between the sides are highlighted — that's usually the point of the
+// comparison (e.g. Parallel mode=turbo vs advanced, Exa category=company vs people).
+function paintCmpParams(left, right) {
+  const cat = window.PG_CATALOG;
+  const qf = s => cat.providers[s.provider].endpoints[s.endpoint].compareQueryField;
+  const clean = s => { const o = { ...s.params }; delete o[qf(s)]; return o; };
+  const L = clean(left), R = clean(right);
+  const render = (Side, mine, other) => {
+    const host = document.getElementById('cmp' + Side + 'Params');
+    host.innerHTML = '';
+    const keys = Object.keys(mine);
+    host.style.display = keys.length ? 'flex' : 'none';
+    for (const k of keys) {
+      const differs = JSON.stringify(mine[k]) !== JSON.stringify(other[k]);
+      const v = Array.isArray(mine[k]) ? mine[k].join(', ') : String(mine[k]);
+      host.appendChild(el('span', { class: 'cmp-param' + (differs ? ' cmp-param-diff' : ''), text: k + ': ' + v }));
+    }
+  };
+  render('Left', L, R);
+  render('Right', R, L);
 }
 
 const _cmpLoad = {};
