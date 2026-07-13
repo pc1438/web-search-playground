@@ -40,7 +40,7 @@ providers/
   perplexity/     # PerplexityProvider — /search (Search API, base call()) + /v1/agent (Bearer, streaming
                   # call() via runner; `tools` selector: web_search/fetch_url/people_search/finance_search).
                   # Note: Perplexity has no contents/people/company ENDPOINTS — those are agent tools.
-  parallel/       # ParallelProvider — /v1/search (stable) + /v1beta/search (beta, processor/limits;
+  parallel/       # ParallelProvider — /v1/search (mode: turbo=Search Turbo / basic / advanced) + /v1beta/search (beta, processor/limits;
                   # uses Endpoint.extra_headers for the beta version header) + /v1/tasks/runs (Task API:
                   # async create→poll→result via a custom call(); synthesized cited answer)
                   # + /v1beta/findall/entity-search (results-only).

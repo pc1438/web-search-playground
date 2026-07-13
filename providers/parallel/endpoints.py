@@ -16,14 +16,19 @@ ENTITY_TYPES = ["people", "companies"]
 PROCESSORS = ["base", "pro"]
 TASK_PROCESSORS = ["lite", "base", "core", "pro", "ultra"]
 
+SEARCH_MODES = ["turbo", "basic", "advanced"]   # verified live 2026-07
+
 SEARCH = Endpoint(
-    "search", "POST /v1/search — ranked results + excerpts (stable)",
-    "/v1/search", compare_query_field="search_queries",
+    "search", "POST /v1/search — ranked results + excerpts (incl. Search Turbo)",
+    "/v1/search", compare_query_field="search_queries", compare_params=["mode"],
     docs_url="https://docs.parallel.ai/api-reference/search/search", params=[
         Param("search_queries", "csv", required=True, placeholder="best vector databases 2026",
               help="Keyword queries to execute (comma-separated). At least one required."),
         Param("objective", "text", placeholder="e.g. best open-source vector databases",
               help="Optional natural-language description of what you're searching for."),
+        Param("mode", "enum", values=SEARCH_MODES,
+              help="Latency/quality tier: turbo (~200ms, cheapest), basic, or advanced "
+                   "(default, ~3s, highest quality). turbo = Parallel's Search Turbo."),
         Param("session_id", "string", advanced=True, help="Optional ID to group related calls (up to 1000 chars)."),
     ])
 

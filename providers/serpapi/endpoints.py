@@ -27,7 +27,8 @@ SEARCH = Endpoint(
               help="Which search engine to scrape. Changes the per-result shape (organic_results, "
                    "news_results, images_results, …)."),
         Param("q", "text", required=True, placeholder="e.g. best open-source vector databases",
-              help="The search query."),
+              help="The search query. Sent as the engine's query param automatically "
+                   "(most use `q`; Yandex uses `text`, Yahoo `p`, YouTube `search_query`)."),
         Param("location", "string", placeholder="Austin, Texas, United States",
               help="Canonical location to search from (google-family engines)."),
         Param("google_domain", "string", placeholder="google.com", help="Google domain to use."),

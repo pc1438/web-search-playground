@@ -10,6 +10,10 @@ wrapper. No override needed.
 from providers.base import Provider
 from providers.serpapi.endpoints import ENDPOINTS, ENDPOINT_ORDER
 
+# Most SerpApi engines take the query in `q`, but a few use a different param.
+# The playground uses a single `q` field; we remap it per engine at call time.
+_QUERY_PARAM = {"yandex": "text", "yahoo": "p", "youtube": "search_query"}
+
 
 class SerpApiProvider(Provider):
     id = "serpapi"
@@ -19,3 +23,12 @@ class SerpApiProvider(Provider):
     key_env = "SERPAPI_API_KEY"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
+
+    def call(self, endpoint_id: str, params: dict, timeout: int = 60) -> dict:
+        # Rename the query field to the selected engine's expected param (e.g.
+        # yandex → text). Everything else is a standard GET (base call()).
+        params = dict(params)
+        qp = _QUERY_PARAM.get(params.get("engine"))
+        if qp and "q" in params:
+            params[qp] = params.pop("q")
+        return super().call(endpoint_id, params, timeout)
