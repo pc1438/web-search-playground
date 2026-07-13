@@ -121,8 +121,9 @@ class Provider:
     id: str = ""
     label: str = ""
     base_url: str = ""
-    auth_header: str = ""                     # header the API key goes in
+    auth_header: str = ""                     # header the API key goes in (blank if none)
     auth_prefix: str = ""                     # value prefix, e.g. "Bearer " for Authorization
+    auth_query_param: str = ""                # if set, key goes in this query param instead of a header (e.g. SerpApi ?api_key=)
     key_env: str = ""                         # env var holding the key
     endpoint_order: list = []                 # display order; falls back to dict order
     endpoints: dict = {}                      # id -> Endpoint
@@ -135,7 +136,10 @@ class Provider:
         return key
 
     def headers(self) -> dict:
-        return {"Content-Type": "application/json", self.auth_header: self.auth_prefix + self.api_key()}
+        h = {"Content-Type": "application/json"}
+        if self.auth_header:
+            h[self.auth_header] = self.auth_prefix + self.api_key()
+        return h
 
     # ── invocation ──
     def call(self, endpoint_id: str, params: dict, timeout: int = 120) -> dict:
@@ -155,6 +159,8 @@ class Provider:
         t0 = time.perf_counter()
         if method == "GET":
             qp = {k: (",".join(map(str, v)) if isinstance(v, list) else v) for k, v in params.items()}
+            if self.auth_query_param:            # key goes in the query string (never echoed in `request`)
+                qp[self.auth_query_param] = self.api_key()
             resp = requests.request(method, url, params=qp, headers=headers, timeout=timeout)
         else:
             resp = requests.request(method, url, json=params, headers=headers, timeout=timeout)
@@ -183,6 +189,7 @@ class Provider:
             "baseUrl": self.base_url,
             "authHeader": self.auth_header,
             "authPrefix": self.auth_prefix,
+            "authQueryParam": self.auth_query_param,
             "keyEnv": self.key_env,
             "comparable": any(self.endpoints[eid].compare_query_field for eid in order),
             "endpointOrder": order,

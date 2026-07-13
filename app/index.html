@@ -718,7 +718,7 @@
   <h2>What this is</h2>
   <p>A <strong>schema-driven playground for search APIs</strong> across providers, with two modes:</p>
   <ul style="font-size:13.5px;line-height:1.7;color:#5a6270;padding-left:22px;margin:0 0 10px">
-    <li><strong>Playground</strong> — each provider is a tab (<strong>Brave · Exa · Parallel · Perplexity · Tavily · You.com</strong>); pick an endpoint, fill a form generated from its schema, and inspect the raw response.</li>
+    <li><strong>Playground</strong> — each provider is a tab (<strong>Brave · Exa · Parallel · Perplexity · SerpApi · Tavily · You.com</strong>); pick an endpoint, fill a form generated from its schema, and inspect the raw response.</li>
     <li><strong>Compare</strong> — configure <em>any two comparable</em> endpoints (provider + endpoint + parameters), ask one question, and see each endpoint's raw response side by side — the same view as the provider tabs.</li>
   </ul>
 
@@ -739,7 +739,8 @@
 │   ├── <span class="ah">perplexity/</span>      <span class="ac"># Perplexity Agent API (Bearer auth, streaming call())</span>
 │   ├── <span class="ah">parallel/</span>        <span class="ac"># /v1/search + /v1beta/search + /v1/tasks/runs (Task API, async) + FindAll</span>
 │   ├── <span class="ah">tavily/</span>          <span class="ac"># Tavily — search / extract / map / crawl (Bearer)</span>
-│   └── <span class="ah">brave/</span>           <span class="ac"># Brave — GET query-param API (web/news/images/videos + suggest/spellcheck/summarizer/local)</span>
+│   ├── <span class="ah">brave/</span>           <span class="ac"># Brave — GET query-param API (web/news/images/videos + suggest/spellcheck/summarizer/local)</span>
+│   └── <span class="ah">serpapi/</span>         <span class="ac"># SerpApi — GET /search across engines (google/bing/ddg/…); ?api_key= query auth</span>
 ├── <span class="ah">app/</span>                 <span class="ac"># thin web layer over providers/</span>
 │   ├── <span class="af">server.py</span>        <span class="ac"># /api/providers · /api/call · /api/compare</span>
 │   ├── <span class="af">playground.js</span>    <span class="ac"># generic renderer — fetches catalog, no per-provider code</span>

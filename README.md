@@ -1,7 +1,7 @@
 # Search API Playground
 
 A schema-driven playground to **try, inspect, and compare web-search APIs** side by
-side — Exa, You.com, Perplexity, Parallel, Tavily, and Brave — from one UI.
+side — Exa, You.com, Perplexity, Parallel, Tavily, Brave, and SerpApi — from one UI.
 
 Two modes:
 
@@ -24,6 +24,7 @@ a server-side catalog, so the request schema and the UI can't drift apart.
 | **Parallel** | `/v1/search`, `/v1beta/search`, `/v1/tasks/runs` (Task API), `/v1beta/findall/entity-search` | `x-api-key` |
 | **Tavily** | `/search`, `/extract`, `/map`, `/crawl` | Bearer |
 | **Brave** | web / news / images / videos search, suggest, spellcheck, summarizer, local POIs & descriptions | `X-Subscription-Token` (GET) |
+| **SerpApi** | `/search` across engines (Google, Bing, DuckDuckGo, YouTube, …) via an `engine` selector | `api_key` query param (GET) |
 
 Any endpoint that accepts a query is selectable in **Compare**. Some Brave
 endpoints require a higher plan tier; the playground surfaces the provider's own

@@ -2,8 +2,8 @@
 
 A schema-driven playground for search endpoints across providers, with two modes:
 - **Playground**: pick a provider (tab: Brave · Exa · Parallel · Perplexity ·
-  Tavily · You.com), an endpoint (dropdown), fill a request-builder form generated
-  from that endpoint's schema, inspect the raw response.
+  SerpApi · Tavily · You.com), an endpoint (dropdown), fill a request-builder form
+  generated from that endpoint's schema, inspect the raw response.
 - **Compare**: configure any two comparable endpoints (provider + endpoint +
   their parameters), ask one question, and see each endpoint's **raw response**
   side by side — the same view the provider tabs use. No scoring/judging.
@@ -47,6 +47,8 @@ providers/
   tavily/         # TavilyProvider — /search /extract /map /crawl; base call() fits (Bearer)
   brave/          # BraveProvider — GET web/news/images/videos search + suggest/spellcheck/summarizer/
                   # local; query-param API (X-Subscription-Token); headers() adds Accept: application/json
+  serpapi/        # SerpApiProvider — one GET /search across engines (google/bing/ddg/youtube/…) via an
+                  # `engine` selector; auth is a ?api_key= query param (auth_query_param), not a header
 app/
   server.py       # thin HTTP: GET /api/providers · POST /api/call · POST /api/compare
   index.html      # provider tabs, form shell, Compare picker, About tab
@@ -92,9 +94,11 @@ its endpoint schemas, register it in `providers/registry.py`, add its key to
 `env.txt`. It appears as a playground tab automatically, and any endpoint with a
 `compare_query_field` is automatically selectable in the Compare picker. The base
 `call()` handles POST-JSON and **GET** (query-string) endpoints out of the box —
-set `Endpoint.method="GET"` for query-param APIs (e.g. Brave). Override
-`Provider.call()` only for streaming / async / non-standard flows, and
-`Provider.headers()` for extra required headers (e.g. Brave's `Accept`).
+set `Endpoint.method="GET"` for query-param APIs (e.g. Brave). Auth is a header by
+default (`auth_header`/`auth_prefix`); set `auth_query_param` instead for key-in-URL
+APIs (e.g. SerpApi `?api_key=`) — the key is injected at request time and never
+echoed in the response. Override `Provider.call()` only for streaming / async /
+non-standard flows, and `Provider.headers()` for extra required headers (Brave's `Accept`).
 
 ## Run
 
@@ -104,7 +108,7 @@ python3 app/server.py --port 8088   # http://localhost:8088
 
 Keys live in `env.txt` (git-ignored), one per provider: `EXA_API_KEY`,
 `PARALLEL_API_KEY`, `YDC_API_KEY`, `PERPLEXITY_API_KEY`, `TAVILY_API_KEY`,
-`BRAVE_API_KEY`. A provider tab only works if its key is present.
+`BRAVE_API_KEY`, `SERPAPI_API_KEY`. A provider tab only works if its key is present.
 
 ## Logging
 

@@ -504,6 +504,11 @@ function renderResponse(container, { httpOk, clientMs, data }) {
                  : Array.isArray(body.entities) ? body.entities
                  : (body.web && Array.isArray(body.web.results)) ? body.web.results          // Brave web nests here
                  : (body.results && Array.isArray(body.results.web)) ? body.results.web      // You.com search nests here
+                 : Array.isArray(body.organic_results) ? body.organic_results                // SerpApi (google/bing/ddg/…)
+                 : Array.isArray(body.news_results) ? body.news_results                      // SerpApi news engines
+                 : Array.isArray(body.images_results) ? body.images_results                  // SerpApi image engines
+                 : Array.isArray(body.video_results) ? body.video_results                    // SerpApi video engines
+                 : Array.isArray(body.local_results) ? body.local_results                    // SerpApi maps/local
                  : null;
   const cost = extractCost(body);
 
@@ -632,20 +637,23 @@ function leafValue(v) {
 }
 
 // Standard result fields; anything else on a result is "extra" (category-specific).
-const STD_KEYS = new Set(["title", "name", "url", "id", "publishedDate", "publish_date", "date", "last_updated",
+const STD_KEYS = new Set(["title", "name", "url", "link", "id", "publishedDate", "publish_date", "date", "last_updated",
   "author", "image", "favicon", "text", "highlights", "highlightScores", "summary", "description", "snippet",
-  "excerpts", "subpages", "score"]);
+  "excerpts", "subpages", "score",
+  // SerpApi-common fields (keep cards clean; full data is in the raw tree)
+  "position", "displayed_link", "redirect_link", "source", "thumbnail", "snippet_highlighted_words"]);
 
 function renderResultCard(r) {
+  const url = r.url || r.link;   // SerpApi results use `link` rather than `url`
   const card = el("div", { class: "pg-card" });
   const head = el("div", { class: "pg-card-head" });
   if (r.favicon) head.appendChild(el("img", { class: "pg-favicon", src: r.favicon, alt: "" }));
-  const title = el("a", { class: "pg-card-title", href: safe(r.url), target: "_blank", text: r.title || r.name || r.url || "(untitled)" });
+  const title = el("a", { class: "pg-card-title", href: safe(url), target: "_blank", text: r.title || r.name || url || "(untitled)" });
   head.appendChild(title);
   card.appendChild(head);
 
   const meta = [];
-  if (r.url) { try { meta.push(new URL(r.url).hostname); } catch { meta.push(r.url); } }
+  if (url) { try { meta.push(new URL(url).hostname); } catch { meta.push(url); } }
   const pub = r.publishedDate || r.publish_date || r.date;
   if (pub) meta.push(String(pub).slice(0, 10));
   if (r.author) meta.push(r.author);
@@ -742,16 +750,20 @@ function clip(s, n) { s = String(s); return s.length > n ? s.slice(0, n) + "…"
 function toCurl(params) {
   const p = PROVIDERS[pg.provider];
   const ep = p.endpoints[pg.endpoint];
-  const auth = `-H "${p.authHeader}: ${p.authPrefix || ""}$${p.keyEnv}"`;
-  // GET endpoints (e.g. Brave) send params as a query string, not a JSON body.
+  const authHeaderLine = p.authHeader ? `-H "${p.authHeader}: ${p.authPrefix || ""}$${p.keyEnv}"` : "";
+  // GET endpoints (Brave, SerpApi) send params as a query string, not a JSON body.
   if ((ep.method || "POST").toUpperCase() === "GET") {
-    const qs = Object.entries(params).map(([k, v]) =>
-      `${encodeURIComponent(k)}=${encodeURIComponent(Array.isArray(v) ? v.join(",") : v)}`).join("&");
-    return [`curl "${p.baseUrl}${ep.path}${qs ? "?" + qs : ""}" \\`, `  ${auth}`].join("\n");
+    const parts = Object.entries(params).map(([k, v]) =>
+      `${encodeURIComponent(k)}=${encodeURIComponent(Array.isArray(v) ? v.join(",") : v)}`);
+    if (p.authQueryParam) parts.push(`${p.authQueryParam}=$${p.keyEnv}`);   // key as a query param (SerpApi)
+    const qs = parts.length ? "?" + parts.join("&") : "";
+    const lines = [`curl "${p.baseUrl}${ep.path}${qs}"${authHeaderLine ? " \\" : ""}`];
+    if (authHeaderLine) lines.push(`  ${authHeaderLine}`);
+    return lines.join("\n");
   }
   return [
     `curl -X ${ep.method} ${p.baseUrl}${ep.path} \\`,
-    `  ${auth} \\`,
+    `  ${authHeaderLine} \\`,
     `  -H "Content-Type: application/json" \\`,
     `  -d '${JSON.stringify(params)}'`,
   ].join("\n");
