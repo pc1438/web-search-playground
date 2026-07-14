@@ -45,3 +45,9 @@ Amazon's fully-managed web search, backed by Amazon's own web index (tens of bil
 - Response (MCP): `content[0].text` is a JSON string → `{ id, results: [{ text, url, title, publishedDate }] }`. Maps cleanly to our result cards (`text` → snippet).
 
 **What adding it would require** — a new `auth: sigv4` mode (pulls in `boto3`/`botocore`, the first heavyweight dep) or an OAuth-JWT flow; a custom `call()` that performs the MCP `tools/call` against the Gateway; and config for the Gateway URL/ARN + AWS creds/region. It also can't be verified without a provisioned Gateway. **Decision:** revisit only if we're actively on AWS and can stand up a Gateway; the response shape is a fine fit, but the integration is far heavier than a key-based REST provider.
+
+**Two ways a third-party search API (like the providers here) plugs into Bedrock** — reference for "how would a REST search API work with Bedrock?":
+- **Converse `tool_use` (client-side).** The model runs on Bedrock; the app calls the Bedrock Runtime **`Converse`** API — an HTTPS POST to `bedrock-runtime.<region>.amazonaws.com`, **SigV4-signed** (usually via an AWS SDK) — with a `toolConfig` declaring e.g. a `web_search` tool. The model returns a `toolUse` block; **the app's own code** makes an ordinary HTTPS call to the search API (plain API key) and returns the hits as a `toolResult` on the next turn. No AWS provisioning; the search call happens in the app (leaves AWS). This is the common, low-friction path.
+- **AgentCore Gateway target (MCP).** Register the search API as a Gateway target (an OpenAPI spec or a Lambda); the Gateway exposes it as an MCP tool discoverable via `tools/list` — the same mechanism as the bundled `web-search` connector, just pointed at a third-party API. Requires standing up a Gateway.
+
+Neither path is wired into this playground today; the providers here are plain REST endpoints that either of the above could call.
