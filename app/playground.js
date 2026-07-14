@@ -820,7 +820,7 @@ function switchProvider(providerId, btn) {
   buildForm();
   const results = document.getElementById("pgResults");
   results.className = "pg-results";
-  results.innerHTML = '<div class="pg-empty">Build a request and hit <strong>Send</strong> to see the response.</div>';
+  results.innerHTML = '<div class="pg-empty"><strong>1.</strong> Pick an endpoint &nbsp;<strong>2.</strong> Fill the form on the left &nbsp;<strong>3.</strong> Hit <strong>Send</strong> — the raw response shows here.</div>';
 }
 
 function buildEndpointDropdown() {

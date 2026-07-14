@@ -304,9 +304,12 @@
   .glossary dd { color: #5a6270; margin: 0; }
 
   /* ─── Exa playground ─────────────────────────────────────────────── */
-  .pg-wrap { display: grid; grid-template-columns: 440px 1fr; gap: 0; min-height: 60vh; }
-  .pg-left { padding: 20px 32px; border-right: 1px solid #e4e6e9; background: #f1f5f9; }
-  .pg-right { padding: 20px 32px; min-width: 0; }
+  /* Full-height request column (colored to the bottom regardless of form length),
+     with a clear divider from the response column. */
+  .pg-wrap { display: grid; grid-template-columns: 440px 1fr; gap: 0; min-height: calc(100vh - 185px); align-items: stretch; }
+  .pg-left { padding: 20px 32px; border-right: 2px solid #cbd0d6; background: #eef1f5; }
+  .pg-right { padding: 20px 32px; min-width: 0; background: #ffffff; }
+  .pg-left-label, .pg-right-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
 
   .pg-endpoint-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .pg-endpoint-bar .pg-select { flex: 1; min-width: 0; }
@@ -643,6 +646,7 @@
 
   <div class="pg-wrap">
     <div class="pg-left">
+      <div class="pg-left-label">Request</div>
       <div class="pg-endpoint-bar">
         <label class="pg-endpoint-label">Endpoint</label>
         <select id="pgEndpoint" class="pg-input pg-select"></select>
@@ -677,8 +681,9 @@
     </div>
 
     <div class="pg-right">
+      <div class="pg-right-label">Response</div>
       <div class="pg-results" id="pgResults">
-        <div class="pg-empty">Build a request on the left and hit <strong>Send</strong> to see the response.</div>
+        <div class="pg-empty"><strong>1.</strong> Pick an endpoint &nbsp;<strong>2.</strong> Fill the form on the left &nbsp;<strong>3.</strong> Hit <strong>Send</strong> — the raw response shows here.</div>
       </div>
     </div>
   </div>
