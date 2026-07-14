@@ -220,6 +220,12 @@ class AppHandler(SimpleHTTPRequestHandler):
         except requests.RequestException as e:
             self._send_json(502, {"error": f"Request to {provider_id} failed: {e}"})
             return
+        except Exception as e:
+            # Providers with a custom call() (e.g. Perplexity agent runner) can raise
+            # RuntimeError etc.; return a clean JSON error instead of a dead 500.
+            logger.error("call %s/%s failed: %s", provider_id, endpoint, e, exc_info=True)
+            self._send_json(502, {"error": f"{provider_id}/{endpoint} failed: {e}"})
+            return
 
         logger.info("proxy %s/%s → HTTP %s in %dms", provider_id, endpoint, result["status"], result["elapsed_ms"])
         logger.debug("call %s/%s response=%.4000s", provider_id, endpoint, json.dumps(result.get("body")))

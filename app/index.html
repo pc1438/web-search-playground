@@ -900,6 +900,10 @@ async function runCompare() {
       _cmpController.signal);
   } catch (err) {
     if (err.name !== 'AbortError') setCmpStatus('Error: ' + (err.message || err));
+  } finally {
+    // Stop any still-running loading timers (e.g. sides that never produced a
+    // result because the user hit Stop) so they don't tick against detached DOM.
+    Object.values(_cmpLoad).forEach(l => l && l.stop());
   }
   _cmpController = null;
   document.getElementById('cmpStopBtn').style.display = 'none';

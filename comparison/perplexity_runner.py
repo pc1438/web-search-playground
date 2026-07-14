@@ -62,7 +62,7 @@ AGENT_INSTRUCTIONS = (
 
 # ─── Agent API runner ────────────────────────────────────────────────────────
 
-def run_perplexity_sac(question: str, api_key: str, on_progress=None, tools=None, model=None) -> dict:
+def run_perplexity_sac(question: str, api_key: str, on_progress=None, tools=None, model=None, timeout=AGENT_TIMEOUT) -> dict:
     """Run a query through Claude inside Perplexity's Agent API with streaming.
 
     Uses stream=True so output items (search_results, fetch_url_results, message)
@@ -90,7 +90,7 @@ def run_perplexity_sac(question: str, api_key: str, on_progress=None, tools=None
 
     stats = {
         "path": "Claude (Perplexity Agent API)",
-        "model": PERPLEXITY_SAC_CONFIG["model"],
+        "model": model or PERPLEXITY_SAC_CONFIG["model"],
         "total_tokens": 0,
         "input_tokens": 0,
         "output_tokens": 0,
@@ -117,12 +117,12 @@ def run_perplexity_sac(question: str, api_key: str, on_progress=None, tools=None
             AGENT_ENDPOINT,
             json=payload,
             headers=headers,
-            timeout=AGENT_TIMEOUT,
+            timeout=timeout,
             stream=True,
         )
         resp.raise_for_status()
     except requests.Timeout:
-        raise RuntimeError(f"Perplexity Agent API timed out after {AGENT_TIMEOUT}s")
+        raise RuntimeError(f"Perplexity Agent API timed out after {timeout}s")
     except requests.HTTPError as e:
         status = e.response.status_code if e.response is not None else "unknown"
         body = ""

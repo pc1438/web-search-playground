@@ -34,7 +34,7 @@ class PerplexityProvider(Provider):
         if isinstance(tools, str):   # fan-out compare mode sends a single tool name
             tools = [tools]
         t0 = time.perf_counter()
-        stats = run_perplexity_sac(question, self.api_key(), tools=tools, model=params.get("model"))
+        stats = run_perplexity_sac(question, self.api_key(), tools=tools, model=params.get("model"), timeout=timeout)
         return {
             "ok": True,
             "status": 200,
