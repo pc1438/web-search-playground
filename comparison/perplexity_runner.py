@@ -33,12 +33,9 @@ import os
 import sys
 import time
 import requests
-from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv("env.txt") or load_dotenv(".env")
-load_dotenv(Path(__file__).parent.parent / "grounding" / "env.txt")
-load_dotenv(Path(__file__).parent.parent / "grounding" / ".env")
 
 
 # ─── Config ─────────────────────────────────────────────────────────────────

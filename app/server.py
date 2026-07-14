@@ -79,7 +79,6 @@ PROXY_TIMEOUT = 120  # per-call timeout for the generic provider proxy
 class AppHandler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     MAX_BODY_SIZE = 10_000
-    MAX_QUERY_LENGTH = 2_000
     ALLOWED_ORIGIN = "http://localhost:8088"
 
     def setup(self):
