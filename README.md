@@ -58,6 +58,29 @@ internet**. To run it beyond localhost:
 - **Keep `env.txt` on the server only** — inject keys at runtime; never bake them
   into an image or commit them.
 - Run under a process manager (systemd, pm2, Docker) so it restarts on failure.
+- **Set a Content-Security-Policy at the proxy.** The app renders JSON from
+  third-party APIs, so a CSP is a worthwhile XSS backstop. It's applied as a
+  proxy **response header** (not an in-app `<meta>`) — the page uses inline
+  scripts, so the proxy is the right layer. A working baseline that still hardens
+  meaningfully (blocks external/object/frame injection, restricts fetch origins;
+  `img-src *` is required for result-card favicons):
+
+  ```
+  Content-Security-Policy:
+    default-src 'self';
+    script-src 'self' 'unsafe-inline';
+    style-src  'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src   https://fonts.gstatic.com;
+    img-src    * data:;
+    connect-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    frame-ancestors 'none'
+  ```
+
+  For a **strict** `script-src 'self'` (no `'unsafe-inline'`, the real XSS
+  backstop), first extract the inline `<script>` blocks + `onclick=` handlers in
+  `index.html` into `playground.js` — tracked as a known follow-up.
 
 ```bash
 python3 app/server.py --port 8088   # front this with your proxy
