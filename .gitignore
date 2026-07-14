@@ -14,3 +14,6 @@ venv/
 # Claude Code: keep the run config, ignore assistant-only workflow files
 .claude/*
 !.claude/launch.json
+
+# Local analysis / deep-dive scratch (not published yet)
+analysis/

@@ -45,7 +45,7 @@ WEB = Endpoint(
         *_common(20),
         Param("freshness", "string", help="Recency filter. " + FRESHNESS_HELP),
         Param("result_filter", "csv", advanced=True, help="Limit result types. Values: " + RESULT_FILTER),
-        Param("goggles", "csv", advanced=True, help="Goggle URLs/definitions that re-rank results."),
+        Param("goggles", "string", advanced=True, help="A Goggle URL or inline definition that re-ranks results. (Brave's goggles param is repeatable; the playground sends one.)"),
         Param("units", "enum", values=["metric", "imperial"], advanced=True, help="Measurement units in results."),
         Param("extra_snippets", "bool", advanced=True, help="Return up to 5 extra excerpts per result."),
         Param("summary", "bool", advanced=True, help="Enable a summarizer key in the response (for /summarizer)."),
@@ -59,7 +59,7 @@ NEWS = Endpoint(
         *_common(50),
         Param("freshness", "string", help="Recency filter. " + FRESHNESS_HELP),
         Param("extra_snippets", "bool", advanced=True, help="Return extra excerpts per article."),
-        Param("goggles", "csv", advanced=True, help="Goggle URLs/definitions that re-rank results."),
+        Param("goggles", "string", advanced=True, help="A Goggle URL or inline definition that re-ranks results. (Brave's goggles param is repeatable; the playground sends one.)"),
     ])
 
 IMAGES = Endpoint(

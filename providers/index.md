@@ -28,6 +28,12 @@ touching only its folder — never another provider's, and rarely the shared bas
 
 It surfaces automatically as a playground tab (catalog → tab → endpoint dropdown → form). Any endpoint that sets `compare_query_field` is automatically selectable in the **Compare** picker — no extra code. Override `Provider.call()` only if the API streams, is async, or authenticates unusually (see `perplexity/`, `parallel/`).
 
+## Verification notes
+
+Findings from probing the live APIs (so they're not re-investigated):
+- **Perplexity `/search` params are valid.** `search_context_size`, `max_tokens`, `max_tokens_per_page`, `search_language_filter`, `search_domain_filter`, `country` each return 200 individually. There's a **Perplexity-side** quirk: `search_context_size` + `max_tokens` **together** reproducibly return `500 internal_error` (each alone is fine). Not our bug; the playground surfaces the raw 500. Schema left as-is.
+- **Brave `goggles` is single-value here.** Brave's `goggles` is a *repeatable* query param; our base GET path csv-joins lists (`a,b`), which Brave treats as one (invalid) goggle and silently drops (no error). So `goggles` is modeled as a `string` (one goggle) rather than `csv`. Single-goggle — the common case — works.
+
 ## Evaluated but not added
 
 Notes on search sources we looked at but chose not to integrate (yet), so the reasoning is on record.
