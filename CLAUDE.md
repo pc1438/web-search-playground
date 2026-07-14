@@ -4,9 +4,10 @@ A schema-driven playground for search endpoints across providers, with two modes
 - **Playground**: pick a provider (tab: Brave · Exa · Parallel · Perplexity ·
   SerpApi · Tavily · You.com), an endpoint (dropdown), fill a request-builder form
   generated from that endpoint's schema, inspect the raw response.
-- **Compare**: configure any two comparable endpoints (provider + endpoint +
-  their parameters), ask one question, and see each endpoint's **raw response**
-  side by side — the same view the provider tabs use. No scoring/judging.
+- **Compare**: configure up to **four** comparable endpoints (provider + endpoint
+  + their parameters; any side can be "None"), ask one question, and see each
+  endpoint's **raw response** side by side — the same view the provider tabs use.
+  No scoring/judging.
 
 Tab order: **About** first, then provider tabs (alpha-sorted), then **Compare** last.
 An endpoint is comparable iff it sets `compare_query_field`; those endpoints are
@@ -83,8 +84,8 @@ placement: `required` (asterisk + validated), `optional` (group enable toggle),
 a collapsed **"Advanced options"** group at the bottom, Parallel/Exa-style). Keep
 each endpoint's primary view to its few common knobs; flag the rest `advanced=True`.
 
-**Data flow (compare):** `POST /api/compare {left, right}`, each side
-`{provider, endpoint, params}` (the frontend injects the shared question into the
+**Data flow (compare):** `POST /api/compare {sides: [{id, provider, endpoint,
+params}, …]}` (2–4 sides; the frontend injects the shared question into each
 endpoint's `compare_query_field`). Each side runs the provider's raw `call()` in a
 thread; the `{ok,status,elapsed_ms,url,request,body}` wrapper is streamed back as
 SSE and rendered exactly like a provider tab. No normalization or judging.

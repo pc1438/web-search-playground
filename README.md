@@ -8,8 +8,8 @@ Two modes:
 - **Playground** — pick a provider tab, choose an endpoint, fill a request form
   generated from that endpoint's schema, and inspect the **raw response** (an
   interactive JSON tree + a copyable raw view, plus parsed result cards).
-- **Compare** — configure any two comparable endpoints, ask one question, and see
-  each endpoint's raw response head-to-head.
+- **Compare** — configure up to **four** comparable endpoints (any side can be
+  "None"), ask one question, and see each endpoint's raw response side by side.
 
 No SDKs, no per-provider UI code: every form and view is rendered generically from
 a server-side catalog, so the request schema and the UI can't drift apart.

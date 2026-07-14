@@ -227,64 +227,61 @@ class AppHandler(SimpleHTTPRequestHandler):
     # ── /api/compare ──────────────────────────────────────────────────────
 
     def _handle_compare(self):
-        """Stream two endpoint calls side by side — each side's raw response.
+        """Stream 2–4 endpoint calls side by side — each side's raw response.
 
-        Body: {left, right}, each {provider, endpoint, params}. The frontend has
-        already assembled full params (including the shared question injected into
-        the endpoint's query field), so each side just runs the provider's raw
-        `call()` in a thread and the {ok,status,elapsed_ms,url,request,body}
-        wrapper is streamed back for the UI to render exactly like a provider tab.
-        No judging or normalization — the endpoint's own output is the output.
+        Body: {sides: [{id, provider, endpoint, params}, …]} (2–4 entries). The
+        frontend has already assembled full params (including the shared question
+        injected into each endpoint's query field), so each side just runs the
+        provider's raw `call()` in its own thread and the {ok,status,elapsed_ms,
+        url,request,body} wrapper is streamed back (tagged by `id`) for the UI to
+        render exactly like a provider tab. No judging or normalization.
         """
         payload = self._read_json_body()
         if payload is None:
             return
 
-        def resolve(v):
-            v = v or {}
-            return (registry.get((v.get("provider") or "").strip()),
-                    (v.get("endpoint") or "").strip(),
-                    v.get("params") or {})
+        sides_in = payload.get("sides")
+        if not isinstance(sides_in, list) or len(sides_in) < 2:
+            self._send_json(400, {"error": "Provide at least two sides."})
+            return
+        sides_in = sides_in[:4]   # cap at four
 
-        sides = {}
-        for side in ("left", "right"):
-            prov, eid, sparams = resolve(payload.get(side))
-            if prov is None:
-                self._send_json(400, {"error": f"{side}: unknown provider"})
+        resolved = []   # (id, provider, endpoint, params)
+        for s in sides_in:
+            sid = (s.get("id") or "").strip()
+            prov = registry.get((s.get("provider") or "").strip())
+            eid = (s.get("endpoint") or "").strip()
+            if prov is None or not eid or eid not in prov.endpoints:
+                self._send_json(400, {"error": f"side {sid!r}: unknown provider/endpoint"})
                 return
-            if not eid or eid not in prov.endpoints:
-                self._send_json(400, {"error": f"{side}: unknown endpoint {eid!r}"})
-                return
-            sides[side] = (prov, eid, sparams)
+            resolved.append((sid, prov, eid, s.get("params") or {}))
 
-        labels = {s: f"{p.label} · {e}" for s, (p, e, _) in sides.items()}
-        logger.info("compare %s/%s vs %s/%s", sides["left"][0].id, sides["left"][1],
-                    sides["right"][0].id, sides["right"][1])
+        labels = {sid: f"{p.label} · {e}" for sid, p, e, _ in resolved}
+        logger.info("compare %s", " vs ".join(f"{p.id}/{e}" for _, p, e, _ in resolved))
 
         self._start_sse()
         send = self._make_sse_sender()
-        results = {"left": None, "right": None}
+        results = {sid: None for sid, *_ in resolved}
 
-        def run(side, prov, eid, sparams):
-            send("status", {"side": side, "message": f"Running {prov.label} · {eid}…"})
+        def run(sid, prov, eid, sparams):
             try:
-                results[side] = prov.call(eid, sparams, timeout=THREAD_TIMEOUT)
+                results[sid] = prov.call(eid, sparams, timeout=THREAD_TIMEOUT)
             except ProviderKeyMissing as e:
-                results[side] = {"error": str(e)}
+                results[sid] = {"error": str(e)}
             except Exception as e:
-                logger.error("%s (%s/%s) call failed: %s", side, prov.id, eid, e, exc_info=True)
-                results[side] = {"error": f"{prov.label} failed. Please try again."}
+                logger.error("%s (%s/%s) call failed: %s", sid, prov.id, eid, e, exc_info=True)
+                results[sid] = {"error": f"{prov.label} failed. Please try again."}
 
-        threads = [threading.Thread(target=run, args=(s, p, e, sp)) for s, (p, e, sp) in sides.items()]
+        threads = [threading.Thread(target=run, args=(sid, p, e, sp)) for sid, p, e, sp in resolved]
         for t in threads:
             t.start()
         for t in threads:
             t.join(timeout=THREAD_TIMEOUT + 10)
 
-        for side, (prov, eid, _) in sides.items():
-            wrapper = results[side] or {"error": f"{prov.label} timed out."}
-            send("result", {"side": side, "provider": prov.id, "endpoint": eid,
-                            "label": labels[side], "wrapper": wrapper})
+        for sid, prov, eid, _ in resolved:
+            wrapper = results[sid] or {"error": f"{prov.label} timed out."}
+            send("result", {"side": sid, "provider": prov.id, "endpoint": eid,
+                            "label": labels[sid], "wrapper": wrapper})
 
         send("done", {})
 
