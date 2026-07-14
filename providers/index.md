@@ -27,3 +27,21 @@ touching only its folder — never another provider's, and rarely the shared bas
 3. Add its API key to `env.txt`.
 
 It surfaces automatically as a playground tab (catalog → tab → endpoint dropdown → form). Any endpoint that sets `compare_query_field` is automatically selectable in the **Compare** picker — no extra code. Override `Provider.call()` only if the API streams, is async, or authenticates unusually (see `perplexity/`, `parallel/`).
+
+## Evaluated but not added
+
+Notes on search sources we looked at but chose not to integrate (yet), so the reasoning is on record.
+
+### Amazon Bedrock AgentCore — Web Search Tool  *(evaluated 2026-07; held off)*
+Amazon's fully-managed web search, backed by Amazon's own web index (tens of billions of docs, continuously refreshed, knowledge graph + semantic snippet extraction). Returns `title / url / snippet (text) / publishedDate`; `us-east-1` only. Docs: <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-target-connector-web-search-tool.html>.
+
+**Why it doesn't fit the current contract** — every provider here is "public base URL + API-key (header/query) + one REST call → JSON." Bedrock differs on all three axes:
+- **Endpoint:** not a public `/search`; you must **provision an AgentCore Gateway** in your own AWS account and add a Web Search target (`connectorId: "web-search"`), which yields a per-account, region-locked Gateway URL.
+- **Auth:** AWS **SigV4 / IAM** (`bedrock-agentcore:InvokeGateway` on the Gateway ARN) or the Gateway's OAuth/JWT — not an API key.
+- **Protocol:** **MCP** over HTTP — `tools/list` to discover, then `tools/call` (JSON-RPC), not a single plain request.
+
+**Invocation shape** (for whenever we revisit):
+- `tools/call` input: `query` (string, ≤200 chars, required), `maxResults` (int 1–25, default 10).
+- Response (MCP): `content[0].text` is a JSON string → `{ id, results: [{ text, url, title, publishedDate }] }`. Maps cleanly to our result cards (`text` → snippet).
+
+**What adding it would require** — a new `auth: sigv4` mode (pulls in `boto3`/`botocore`, the first heavyweight dep) or an OAuth-JWT flow; a custom `call()` that performs the MCP `tools/call` against the Gateway; and config for the Gateway URL/ARN + AWS creds/region. It also can't be verified without a provisioned Gateway. **Decision:** revisit only if we're actively on AWS and can stand up a Gateway; the response shape is a fine fit, but the integration is far heavier than a key-based REST provider.
