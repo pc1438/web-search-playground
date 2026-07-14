@@ -578,6 +578,11 @@
   .cmp-setup { background: #eef1f5; border: 1px solid #e4e6e9; border-radius: 12px; padding: 16px 18px; margin-bottom: 22px; }
   .cmp-setup .input-bar, .cmp-setup .cmp-config { margin-bottom: 0; }
   .cmp-setup-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #8c959f; margin-bottom: 8px; }
+  .cmp-config-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .cmp-config-toggle:hover { color: #5a6270; }
+  .cmp-config-toggle .pg-chevron { margin-left: auto; }
+  .cmp-config-toggle.cmp-collapsed .pg-chevron { transform: rotate(-90deg); }
+  #cmpConfig.cmp-hidden { display: none; }
   /* Empty state — tells the user what happens / what to do before first run */
   .cmp-empty { text-align: center; color: #8c959f; font-size: 13px; padding: 30px 20px; border: 1px dashed #d0d3d8; border-radius: 10px; background: #fff; }
   /* Results header — clear boundary between the setup above and responses below */
@@ -696,7 +701,10 @@
       <button id="cmpRunBtn" onclick="runCompare()">Compare</button>
       <button id="cmpStopBtn" class="stop-btn" onclick="stopCompare()" style="display:none">Stop</button>
     </div>
-    <div class="cmp-setup-label" style="margin-top:16px">Compare up to 4 endpoints · set any to “— None —” to skip</div>
+    <div class="cmp-setup-label cmp-config-toggle" id="cmpConfigToggle" onclick="toggleCmpConfig()" style="margin-top:16px">
+      <span>Compare up to 4 endpoints · set any to “— None —” to skip</span>
+      <span class="pg-chevron"></span>
+    </div>
     <div class="cmp-config" id="cmpConfig"></div>
   </div>
 
@@ -983,6 +991,15 @@ function cmpBuildSideForm(side) {
 
 function setCmpStatus(t) { document.getElementById('cmpStatusText').textContent = t; }
 function stopCompare() { if (_cmpController) _cmpController.abort(); }
+
+// Collapse/expand the config section (freed up once results are showing; click
+// the header to reconfigure). `force` true = collapse, false = expand.
+function toggleCmpConfig(force) {
+  const toggle = document.getElementById('cmpConfigToggle');
+  const collapse = (force === undefined) ? !toggle.classList.contains('cmp-collapsed') : force;
+  toggle.classList.toggle('cmp-collapsed', collapse);
+  document.getElementById('cmpConfig').classList.toggle('cmp-hidden', collapse);
+}
 function cmpActiveSides() { return CMP_SIDES.filter(s => cmpState[s] && cmpState[s].provider); }
 
 async function runCompare() {
@@ -1018,6 +1035,7 @@ async function runCompare() {
   setCmpStatus('Running ' + sides.length + ' endpoints…');
   document.getElementById('cmpEmpty').style.display = 'none';
   document.getElementById('cmpResults').style.display = 'block';
+  toggleCmpConfig(true);   // collapse the config so results get the room
 
   // One result pane per active side, laid out in a single row.
   const panes = document.getElementById('cmpPanes');
