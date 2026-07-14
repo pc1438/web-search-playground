@@ -510,6 +510,10 @@ function renderResponse(container, { httpOk, clientMs, data }) {
                  : Array.isArray(body.video_results) ? body.video_results                    // SerpApi video engines
                  : Array.isArray(body.local_results) ? body.local_results                    // SerpApi maps/local
                  : null;
+  // Synthesized answer: Exa/Perplexity use `answer`; You.com research/finance and
+  // Parallel Task put it under `output.content`.
+  const answerText = typeof body.answer === "string" ? body.answer
+                   : (body.output && typeof body.output.content === "string" ? body.output.content : null);
   const cost = extractCost(body);
 
   // Summary bar
@@ -543,8 +547,18 @@ function renderResponse(container, { httpOk, clientMs, data }) {
   if (!data.ok) {
     const msg = body.error || body.message || (body._raw ? body._raw.slice(0, 400) : "Request failed");
     container.appendChild(el("div", { class: "pg-error", text: String(msg) }));
-  } else if (typeof body.answer === "string") {
-    container.appendChild(el("div", { class: "pg-answer", text: body.answer }));
+  } else if (answerText) {
+    container.appendChild(el("div", { class: "pg-answer", text: answerText }));
+    // Some answer endpoints (You.com research/finance) return sources alongside.
+    const srcs = (body.output && Array.isArray(body.output.sources)) ? body.output.sources : [];
+    if (srcs.length) {
+      const line = el("div", { class: "pg-help", style: "margin-top:8px" }, ["Sources: "]);
+      srcs.slice(0, 25).forEach((s, i) => {
+        const u = typeof s === "string" ? s : (s && (s.url || s.link));
+        if (u) { const a = el("a", { href: safe(u), target: "_blank", text: "[" + (i + 1) + "]" }); a.style.marginRight = "6px"; line.appendChild(a); }
+      });
+      container.appendChild(line);
+    }
   } else if (results) {
     const list = el("div", { class: "pg-cards" });
     const shown = results.slice(0, 12);
