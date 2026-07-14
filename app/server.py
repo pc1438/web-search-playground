@@ -1,11 +1,13 @@
 """
-server.py — Web server for the You.com vs. Perplexity competitor comparison UI.
+server.py — thin HTTP layer for the Search API Playground.
 
-Endpoint:
-    POST /api/compare  — SSE stream comparing You.com Research API vs. Perplexity SaC
+A small, threaded `http.server` over the `providers/` registry. Endpoints:
+    GET  /api/providers  — the provider catalog the frontend renders from
+    POST /api/call       — run one endpoint (dispatch to registry.get(...).call(...))
+    POST /api/compare    — SSE stream running up to four endpoints side by side
 
 Run:
-    python app/server.py                # starts on http://localhost:8081
+    python app/server.py                # starts on http://localhost:8088
     python app/server.py --port 9000    # custom port
 """
 
@@ -78,7 +80,7 @@ class AppHandler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     MAX_BODY_SIZE = 10_000
     MAX_QUERY_LENGTH = 2_000
-    ALLOWED_ORIGIN = "http://localhost:8081"
+    ALLOWED_ORIGIN = "http://localhost:8088"
 
     def setup(self):
         super().setup()
@@ -290,7 +292,7 @@ class AppHandler(SimpleHTTPRequestHandler):
 
 def main():
     args = sys.argv[1:]
-    port = 8081
+    port = 8088
     for i, arg in enumerate(args):
         if arg == "--port" and i + 1 < len(args):
             try:
@@ -304,7 +306,7 @@ def main():
 
     AppHandler.ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", f"http://localhost:{port}")
     server = ThreadedHTTPServer(("", port), AppHandler)
-    print(f"Competitor Search — You.com vs. Perplexity")
+    print(f"Search API Playground")
     print(f"Server running at http://localhost:{port}")
     print(f"Press Ctrl+C to stop\n")
 

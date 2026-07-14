@@ -733,7 +733,7 @@
   <p>A <strong>schema-driven playground for search APIs</strong> across providers, with two modes:</p>
   <ul style="font-size:13.5px;line-height:1.7;color:#5a6270;padding-left:22px;margin:0 0 10px">
     <li><strong>Playground</strong> — each provider is a tab (<strong>Brave · Exa · Parallel · Perplexity · SerpApi · Tavily · You.com</strong>); pick an endpoint, fill a form generated from its schema, and inspect the raw response.</li>
-    <li><strong>Compare</strong> — configure <em>any two comparable</em> endpoints (provider + endpoint + parameters), ask one question, and see each endpoint's raw response side by side — the same view as the provider tabs.</li>
+    <li><strong>Compare</strong> — configure <em>up to four</em> comparable endpoints (provider + endpoint + parameters), ask one question, and see each endpoint's raw response side by side — the same view as the provider tabs.</li>
   </ul>
 
   <hr class="about-divider">
@@ -799,11 +799,11 @@
   <div class="flow-row">
     <div class="flow-box user">Compare</div>
     <span class="flow-arrow">→</span>
-    <div class="flow-box post">POST /api/compare<br><small>{left, right} — each {provider, endpoint, params}</small></div>
+    <div class="flow-box post">POST /api/compare<br><small>{sides:[…]} — 2–4, each {provider, endpoint, params}</small></div>
     <span class="flow-arrow">→</span>
-    <div class="flow-box reg">left.call() + right.call()<br><small>parallel, in threads</small></div>
+    <div class="flow-box reg">each side's call() in a thread<br><small>results streamed over SSE</small></div>
     <span class="flow-arrow">→</span>
-    <div class="flow-box answer">two raw responses, side by side</div>
+    <div class="flow-box answer">2–4 raw responses, one pane per side</div>
   </div>
   <p class="about-note">The request-body schema has a <strong>single source of truth</strong> — the provider's Python package. The frontend never hardcodes it; it fetches the catalog and renders. So schema and routing can't drift apart. Any endpoint with a <code>compare_query_field</code> is automatically selectable in the Compare picker.</p>
   <p class="about-note">The generated form keeps a clean primary view: short fields pair up two-per-row, roomy fields span the row, help lives in a hover <strong>ⓘ</strong> tooltip, booleans are toggle switches, and less-common params collapse into <strong>Advanced options</strong>.</p>
