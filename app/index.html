@@ -285,6 +285,53 @@
   .pg-send:disabled { background: #d0d3d8; cursor: not-allowed; }
 
   .pg-req-details { margin-top: 16px; font-size: 12px; }
+
+  /* ── Browse questions panel ──────────────────────────────────────── */
+  .pg-browse-wrap { position: relative; margin-top: 10px; }
+  .pg-browse-btn {
+    font-size: 12px; font-weight: 500; color: #6b7280; background: none;
+    border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 10px; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .pg-browse-btn:hover { background: #f5f3ff; color: #5b21b6; border-color: #c4b5fd; }
+  .pg-browse-btn.active { background: #f5f3ff; color: #5b21b6; border-color: #a78bfa; }
+  .pg-qbrowser {
+    display: none; position: absolute; bottom: calc(100% + 6px); left: 0; right: 0;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.12); z-index: 200; overflow: hidden;
+  }
+  .pg-qbrowser.open { display: block; }
+  .pg-qb-tabs { display: flex; gap: 4px; padding: 10px 10px 0; border-bottom: 1px solid #f0f1f3; flex-wrap: wrap; }
+  .pg-qb-tab {
+    font-size: 11px; font-weight: 500; padding: 4px 10px 6px; border: none; border-bottom: 2px solid transparent;
+    background: none; cursor: pointer; color: #6b7280; white-space: nowrap;
+  }
+  .pg-qb-tab.active { color: #5b21b6; border-bottom-color: #7c3aed; }
+  .pg-qb-tab .qb-count { opacity: 0.6; margin-left: 3px; }
+  .pg-qb-search {
+    width: 100%; padding: 8px 12px; border: none; border-bottom: 1px solid #f0f1f3;
+    font-size: 12px; outline: none; color: #1f2328;
+  }
+  .pg-qb-list { max-height: 260px; overflow-y: auto; }
+  .pg-qb-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    cursor: pointer; font-size: 12px; color: #374151; border-bottom: 1px solid #f9fafb;
+  }
+  .pg-qb-item:hover { background: #f5f3ff; }
+  .pg-qb-badge {
+    font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px;
+    flex-shrink: 0; white-space: nowrap;
+  }
+  .pg-qb-badge.tier1 { background: #dcfce7; color: #166534; }
+  .pg-qb-badge.tier2 { background: #fef9c3; color: #854d0e; }
+  .pg-qb-badge.tier3 { background: #fee2e2; color: #991b1b; }
+  .pg-qb-badge.tier4 { background: #ede9fe; color: #5b21b6; }
+  .pg-qb-badge.realtimeqa { background: #dbeafe; color: #1e40af; }
+  .pg-qb-badge.freshqa { background: #d1fae5; color: #065f46; }
+  .pg-qb-badge.simpleqa { background: #fef3c7; color: #92400e; }
+  .pg-qb-badge.deepsearchqa { background: #e0f2fe; color: #0c4a6e; }
+  .pg-qb-badge.browsecomp { background: #fce7f3; color: #9d174d; }
+  .pg-qb-empty { font-size: 12px; color: #9ca3af; padding: 12px; }
   /* Collapsible affordance shared by the request panel + raw response object */
   .pg-req-details > summary, .pg-raw > summary {
     cursor: pointer; list-style: none; user-select: none;
@@ -542,6 +589,17 @@
       </label>
 
       <div class="pg-form" id="pgForm"></div>
+
+      <div class="pg-browse-wrap">
+        <button class="pg-browse-btn" id="pgBrowseBtn" onclick="togglePgQBrowser()">
+          <span>📋</span> Browse questions
+        </button>
+        <div class="pg-qbrowser" id="pgQBrowser">
+          <div class="pg-qb-tabs" id="pgQbTabs"></div>
+          <input class="pg-qb-search" id="pgQbSearch" type="text" placeholder="Filter questions…">
+          <div class="pg-qb-list" id="pgQbList"></div>
+        </div>
+      </div>
 
       <button id="pgSendBtn" class="pg-send">Send request</button>
 
@@ -965,6 +1023,131 @@ function switchTab(tabId, btn) {
 }
 </script>
 <script src="/playground.js"></script>
+<script>
+// ─── Browse questions panel ───────────────────────────────────────────────
+let _pgQbData = null;
+let _pgQbOpen = false;
+let _pgQbActiveTab = 'bench50';
+
+async function _loadPgQbData() {
+  if (_pgQbData) return;
+  const tryFetch = url => fetch(url).then(r => r.ok ? r.json() : null).catch(() => null);
+  const [r1, r2, r3, r4, r5] = await Promise.all([
+    fetch('/api/questions').then(r => r.json()),
+    fetch('/api/retrievalqa').then(r => r.json()),
+    tryFetch('/api/simpleqa'),
+    tryFetch('/api/deepsearchqa'),
+    tryFetch('/api/browsecomp'),
+  ]);
+  const bench50 = [];
+  r1.tiers.forEach(tier => {
+    const bc = `tier${tier.tier}`;
+    tier.questions.forEach(q => bench50.push({ query: q.query, badge: tier.name, badgeClass: bc }));
+  });
+  const retrievalqa = r2.questions.map(q => ({
+    query: q.question,
+    badge: q.source === 'realtimeqa' ? 'RealTimeQA' : 'FreshQA',
+    badgeClass: q.source === 'realtimeqa' ? 'realtimeqa' : 'freshqa',
+  }));
+  const simpleqa    = r3 ? r3.questions.map(q => ({ query: q.query, badge: q.badge || 'SimpleQA',     badgeClass: 'simpleqa'    })) : [];
+  const deepsearchqa= r4 ? r4.questions.map(q => ({ query: q.query, badge: q.badge || 'DeepSearchQA', badgeClass: 'deepsearchqa'})) : [];
+  const browsecomp  = r5 ? r5.questions.map(q => ({ query: q.query, badge: q.badge || 'BrowseComp',   badgeClass: 'browsecomp'  })) : [];
+  _pgQbData = { bench50, retrievalqa, simpleqa, deepsearchqa, browsecomp };
+}
+
+function _renderPgQb(filter) {
+  const items = (_pgQbData && _pgQbData[_pgQbActiveTab]) || [];
+  const q = (filter || '').toLowerCase();
+  const filtered = q ? items.filter(i => i.query.toLowerCase().includes(q)) : items;
+
+  const counts = _pgQbData ? {
+    bench50: _pgQbData.bench50.length, retrievalqa: _pgQbData.retrievalqa.length,
+    simpleqa: _pgQbData.simpleqa.length, deepsearchqa: _pgQbData.deepsearchqa.length,
+    browsecomp: _pgQbData.browsecomp.length,
+  } : {};
+  const tabDefs = [
+    { key: 'bench50',      label: 'Your 50' },
+    { key: 'retrievalqa',  label: 'RetrievalQA' },
+    { key: 'simpleqa',     label: 'SimpleQA' },
+    { key: 'deepsearchqa', label: 'DeepSearchQA' },
+    { key: 'browsecomp',   label: 'BrowseComp' },
+  ].filter(t => !counts[t.key] === false);  // only show non-empty
+
+  document.getElementById('pgQbTabs').innerHTML = tabDefs.map(t =>
+    `<button class="pg-qb-tab${_pgQbActiveTab === t.key ? ' active' : ''}"
+      onclick="_pgQbActiveTab='${t.key}';_renderPgQb(document.getElementById('pgQbSearch').value)">
+      ${t.label}<span class="qb-count">${counts[t.key] || ''}</span></button>`
+  ).join('');
+
+  const list = document.getElementById('pgQbList');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="pg-qb-empty">No questions match.</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map((item, i) =>
+    `<div class="pg-qb-item" onclick="_pickPgQuestion(${i})">
+      <span class="pg-qb-badge ${item.badgeClass}">${item.badge}</span>
+      <span>${item.query}</span>
+    </div>`
+  ).join('');
+  // Attach click handlers (using data index into filtered)
+  list.querySelectorAll('.pg-qb-item').forEach((el, i) => {
+    el.addEventListener('click', () => {
+      const query = filtered[i].query;
+      // Fill the query field: find the first text/textarea input in the form
+      // whose label or name suggests it's the query field
+      _fillPgQuery(query);
+      togglePgQBrowser();
+    });
+  });
+}
+
+function _fillPgQuery(query) {
+  // The playground form is dynamic — find the query field by the endpoint's
+  // compare_query_field name or just the first textarea/text input in the form.
+  const form = document.getElementById('pgForm');
+  if (!form) return;
+  const input = form.querySelector('textarea, input[type="text"]');
+  if (!input) return;
+  input.value = query;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+async function togglePgQBrowser() {
+  const panel = document.getElementById('pgQBrowser');
+  const btn   = document.getElementById('pgBrowseBtn');
+  if (_pgQbOpen) {
+    panel.classList.remove('open');
+    btn.classList.remove('active');
+    _pgQbOpen = false;
+    return;
+  }
+  panel.classList.add('open');
+  btn.classList.add('active');
+  _pgQbOpen = true;
+  if (!_pgQbData) {
+    document.getElementById('pgQbList').innerHTML = '<div class="pg-qb-empty">Loading…</div>';
+    await _loadPgQbData();
+  }
+  _renderPgQb('');
+  const searchEl = document.getElementById('pgQbSearch');
+  searchEl.value = '';
+  searchEl.oninput = e => _renderPgQb(e.target.value);
+  searchEl.focus();
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', e => {
+  if (!_pgQbOpen) return;
+  const wrap = document.getElementById('pgBrowseBtn').closest('.pg-browse-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('pgQBrowser').classList.remove('open');
+    document.getElementById('pgBrowseBtn').classList.remove('active');
+    _pgQbOpen = false;
+  }
+});
+</script>
 
 </body>
 </html>

@@ -92,6 +92,18 @@ class AppHandler(SimpleHTTPRequestHandler):
             self._serve_static(APP_DIR / "playground.js", "application/javascript; charset=utf-8")
         elif self.path == "/api/providers":
             self._send_json(200, registry.catalog())
+        elif self.path in ("/api/questions", "/api/retrievalqa", "/api/simpleqa",
+                           "/api/deepsearchqa", "/api/browsecomp"):
+            name = self.path.split("/")[-1]
+            file_map = {
+                "questions":    "benchmark_questions_50.json",
+                "retrievalqa":  "retrievalqa_questions.json",
+                "simpleqa":     "simpleqa_questions.json",
+                "deepsearchqa": "deepsearchqa_questions.json",
+                "browsecomp":   "browsecomp_questions.json",
+            }
+            qfile = APP_DIR.parent.parent / "use-cases" / "comparison" / file_map[name]
+            self._serve_json_file(qfile)
         else:
             self.send_error(404)
 
@@ -104,6 +116,19 @@ class AppHandler(SimpleHTTPRequestHandler):
             return
         self.send_response(200)
         self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Access-Control-Allow-Origin", self.ALLOWED_ORIGIN)
+        self.end_headers()
+        self.wfile.write(content)
+
+    def _serve_json_file(self, path):
+        try:
+            content = path.read_bytes()
+        except FileNotFoundError:
+            self.send_error(404)
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(content)))
         self.send_header("Access-Control-Allow-Origin", self.ALLOWED_ORIGIN)
         self.end_headers()
