@@ -14,6 +14,8 @@ from providers.parallel import ParallelProvider
 from providers.tavily import TavilyProvider
 from providers.brave import BraveProvider
 from providers.serpapi import SerpApiProvider
+from providers.ceramic import CeramicProvider
+from providers.octen import OctenProvider
 
 # Instantiate each provider once. Tabs are alpha-sorted in the UI, so this order
 # only affects the catalog's providerOrder (used where an explicit order matters).
@@ -25,6 +27,8 @@ _INSTANCES = [
     TavilyProvider(),
     BraveProvider(),
     SerpApiProvider(),
+    CeramicProvider(),
+    OctenProvider(),
 ]
 
 _PROVIDERS = {p.id: p for p in _INSTANCES}

@@ -490,6 +490,62 @@ function fmtCost(n) {
   return n.toFixed(4);
 }
 
+// Provider-reported processing time (their compute only, excludes network), where
+// the API returns it. Units vary — Exa reports milliseconds, the rest report
+// seconds — so normalize everything to ms. Providers that don't report it
+// (Perplexity, Parallel, Brave) return null → no "server" pill.
+function extractServerTime(body) {
+  if (!body || typeof body !== "object") return null;
+  const S = 1000;
+  if (typeof body.searchTime === "number") return { ms: Math.round(body.searchTime) };                                     // Exa (ms)
+  if (body.metadata && typeof body.metadata.latency === "number") return { ms: Math.round(body.metadata.latency * S) };    // You.com (s)
+  if (typeof body.response_time === "number") return { ms: Math.round(body.response_time * S) };                           // Tavily (s)
+  if (body.search_metadata && typeof body.search_metadata.total_time_taken === "number")
+    return { ms: Math.round(body.search_metadata.total_time_taken * S) };                                                  // SerpApi (s)
+  if (body.result && body.result.searchMetadata && typeof body.result.searchMetadata.executionTime === "number")
+    return { ms: Math.round(body.result.searchMetadata.executionTime * S) };                                               // Ceramic (s)
+  if (body.meta && typeof body.meta.latency === "number") return { ms: Math.round(body.meta.latency) };                   // Octen (ms)
+  return null;
+}
+
+// Rough token estimates (chars/4 approximation, consistent with GPT tokenisation heuristic).
+// "raw" = full JSON body string. "content" = text fields humans/LLMs actually read
+// (title + snippet/description/content/answer across all known response shapes).
+function estimateTokens(body) {
+  if (!body || typeof body !== "object") return null;
+  const raw = Math.round(JSON.stringify(body).length / 4);
+
+  // Collect human-readable text fields from all known provider result shapes.
+  // String fields: title, snippet, description, content, answer, extract (most providers)
+  // Exa-specific: text={body:"..."}, summary={text:"..."}, highlights=["...","..."]
+  const texts = [];
+  const STRING_KEYS = new Set(["title","snippet","description","content","answer","extract","highlight","full_content"]);
+  const harvest = (obj) => {
+    if (!obj || typeof obj !== "object") return;
+    if (Array.isArray(obj)) { obj.forEach(harvest); return; }
+    for (const [k, v] of Object.entries(obj)) {
+      if (typeof v === "string" && STRING_KEYS.has(k)) {
+        texts.push(v);
+      } else if (k === "text" && typeof v === "string") {
+        texts.push(v);
+      } else if (k === "text" && v && typeof v === "object" && typeof v.body === "string") {
+        texts.push(v.body);                        // Exa: text.body
+      } else if (k === "summary" && typeof v === "string") {
+        texts.push(v);
+      } else if (k === "summary" && v && typeof v === "object" && typeof v.text === "string") {
+        texts.push(v.text);                        // Exa: summary.text
+      } else if (k === "highlights" && Array.isArray(v)) {
+        v.forEach(h => { if (typeof h === "string") texts.push(h); }); // Exa: highlights[]
+      } else if (typeof v === "object") {
+        harvest(v);
+      }
+    }
+  };
+  harvest(body);
+  const content = texts.length ? Math.round(texts.join(" ").length / 4) : null;
+  return { raw, content };
+}
+
 function renderResponse(container, { httpOk, clientMs, data }) {
   container.innerHTML = "";
 
@@ -504,6 +560,8 @@ function renderResponse(container, { httpOk, clientMs, data }) {
                  : Array.isArray(body.entities) ? body.entities
                  : (body.web && Array.isArray(body.web.results)) ? body.web.results          // Brave web nests here
                  : (body.results && Array.isArray(body.results.web)) ? body.results.web      // You.com search nests here
+                 : (body.result && Array.isArray(body.result.results)) ? body.result.results  // Ceramic nests under result.results
+                 : (body.data && Array.isArray(body.data.results)) ? body.data.results       // Octen: { data: { results: [...] } }
                  : Array.isArray(body.organic_results) ? body.organic_results                // SerpApi (google/bing/ddg/…)
                  : Array.isArray(body.news_results) ? body.news_results                      // SerpApi news engines
                  : Array.isArray(body.images_results) ? body.images_results                  // SerpApi image engines
@@ -525,6 +583,29 @@ function renderResponse(container, { httpOk, clientMs, data }) {
   msPill.appendChild(el("span", { class: "pg-info", "data-tip":
     "Round-trip measured by the playground: browser → this server → the provider API → back (includes network + our proxy hop). It's larger than the provider's own processing time, which — when the API reports it — appears in the response body.", text: "i" }));
   bar.appendChild(msPill);
+  // Server-side processing time, when the provider reports it in the response.
+  // Sits next to round-trip so the gap (network + our proxy hop) is visible.
+  const serverT = extractServerTime(body);
+  if (serverT) {
+    const sPill = el("span", { class: "pg-pill", text: serverT.ms + " ms server" });
+    sPill.appendChild(el("span", { class: "pg-info", "data-tip":
+      "Processing time reported by the provider's own API (their compute only, excludes network). The gap versus round-trip is network latency plus our proxy hop. Not every provider reports this.", text: "i" }));
+    bar.appendChild(sPill);
+  }
+  const tok = estimateTokens(body);
+  if (tok) {
+    const rawPill = el("span", { class: "pg-pill", text: "~" + tok.raw.toLocaleString() + " tokens raw" });
+    rawPill.appendChild(el("span", { class: "pg-info", "data-tip":
+      "Estimated tokens in the full JSON response body (chars ÷ 4). Represents the total size of what the API returned.", text: "i" }));
+    bar.appendChild(rawPill);
+    if (tok.content !== null) {
+      const cPill = el("span", { class: "pg-pill", text: "~" + tok.content.toLocaleString() + " tokens content" });
+      cPill.appendChild(el("span", { class: "pg-info", "data-tip":
+        "Estimated tokens in readable text fields only (title, snippet, description, content, answer, summary). This is what you'd typically pass to an LLM downstream.", text: "i" }));
+      bar.appendChild(cPill);
+    }
+  }
+
   if (results) bar.appendChild(el("span", { class: "pg-pill", text: results.length + " result" + (results.length === 1 ? "" : "s") }));
   if (cost) {
     const costPill = el("span", { class: "pg-pill pg-cost", text: "$" + fmtCost(cost.value) });
@@ -652,8 +733,8 @@ function leafValue(v) {
 
 // Standard result fields; anything else on a result is "extra" (category-specific).
 const STD_KEYS = new Set(["title", "name", "url", "link", "id", "publishedDate", "publish_date", "date", "last_updated",
-  "author", "image", "favicon", "text", "highlights", "highlightScores", "summary", "description", "snippet",
-  "excerpts", "subpages", "score",
+  "author", "image", "favicon", "text", "highlights", "highlightScores", "highlight", "full_content",
+  "summary", "description", "snippet", "excerpts", "subpages", "score",
   // SerpApi-common fields (keep cards clean; full data is in the raw tree)
   "position", "displayed_link", "redirect_link", "source", "thumbnail", "snippet_highlighted_words"]);
 
@@ -668,7 +749,7 @@ function renderResultCard(r) {
 
   const meta = [];
   if (url) { try { meta.push(new URL(url).hostname); } catch { meta.push(url); } }
-  const pub = r.publishedDate || r.publish_date || r.date;
+  const pub = r.publishedDate || r.publish_date || r.date || r.time_published;
   if (pub) meta.push(String(pub).slice(0, 10));
   if (r.author) meta.push(r.author);
   if (meta.length) card.appendChild(el("div", { class: "pg-card-meta", text: meta.join(" · ") }));
@@ -684,6 +765,8 @@ function renderResultCard(r) {
   for (const [k, present, val] of [
     ["text", r.text, r.text],
     ["highlights", r.highlights && r.highlights.length, r.highlights],
+    ["highlight", typeof r.highlight === "string" && r.highlight, r.highlight],          // Octen string highlight
+    ["full_content", typeof r.full_content === "string" && r.full_content, r.full_content], // Octen full page content
     ["summary", r.summary, r.summary],
     ["subpages", r.subpages && r.subpages.length, r.subpages],
     ["extras", r.extras, r.extras],
@@ -697,6 +780,7 @@ function renderResultCard(r) {
 
   if (r.summary) card.appendChild(el("div", { class: "pg-snippet", text: clip(r.summary, 240) }));
   else if (r.highlights && r.highlights.length) card.appendChild(el("div", { class: "pg-snippet", text: clip(r.highlights[0], 240) }));
+  else if (typeof r.highlight === "string" && r.highlight) card.appendChild(el("div", { class: "pg-snippet", text: clip(r.highlight, 240) }));  // Octen
   else if (r.description) card.appendChild(el("div", { class: "pg-snippet", text: clip(r.description, 240) }));
   else if (r.excerpts && r.excerpts.length) card.appendChild(el("div", { class: "pg-snippet", text: clip(r.excerpts[0], 240) }));
   else if (r.snippet) card.appendChild(el("div", { class: "pg-snippet", text: clip(r.snippet, 240) }));
