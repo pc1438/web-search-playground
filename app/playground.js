@@ -562,6 +562,7 @@ function renderResponse(container, { httpOk, clientMs, data }) {
                  : (body.results && Array.isArray(body.results.web)) ? body.results.web      // You.com search nests here
                  : (body.result && Array.isArray(body.result.results)) ? body.result.results  // Ceramic nests under result.results
                  : (body.data && Array.isArray(body.data.results)) ? body.data.results       // Octen: { data: { results: [...] } }
+                 : (body.data && Array.isArray(body.data.web)) ? body.data.web              // Firecrawl: { data: { web: [...] } }
                  : Array.isArray(body.organic_results) ? body.organic_results                // SerpApi (google/bing/ddg/…)
                  : Array.isArray(body.news_results) ? body.news_results                      // SerpApi news engines
                  : Array.isArray(body.images_results) ? body.images_results                  // SerpApi image engines
@@ -733,7 +734,7 @@ function leafValue(v) {
 
 // Standard result fields; anything else on a result is "extra" (category-specific).
 const STD_KEYS = new Set(["title", "name", "url", "link", "id", "publishedDate", "publish_date", "date", "last_updated",
-  "author", "image", "favicon", "text", "highlights", "highlightScores", "highlight", "full_content",
+  "author", "image", "favicon", "text", "highlights", "highlightScores", "highlight", "full_content", "markdown",
   "summary", "description", "snippet", "excerpts", "subpages", "score",
   // SerpApi-common fields (keep cards clean; full data is in the raw tree)
   "position", "displayed_link", "redirect_link", "source", "thumbnail", "snippet_highlighted_words"]);
@@ -767,6 +768,7 @@ function renderResultCard(r) {
     ["highlights", r.highlights && r.highlights.length, r.highlights],
     ["highlight", typeof r.highlight === "string" && r.highlight, r.highlight],          // Octen string highlight
     ["full_content", typeof r.full_content === "string" && r.full_content, r.full_content], // Octen full page content
+    ["markdown", typeof r.markdown === "string" && r.markdown, r.markdown],                // Firecrawl scrapeOptions
     ["summary", r.summary, r.summary],
     ["subpages", r.subpages && r.subpages.length, r.subpages],
     ["extras", r.extras, r.extras],
