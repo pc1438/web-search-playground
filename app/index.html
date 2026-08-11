@@ -287,18 +287,17 @@
   .pg-req-details { margin-top: 16px; font-size: 12px; }
 
   /* ── Browse questions panel ──────────────────────────────────────── */
-  .pg-browse-wrap { position: relative; margin-top: 10px; }
-  .pg-browse-btn {
-    font-size: 12px; font-weight: 500; color: #6b7280; background: none;
-    border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 10px; cursor: pointer;
-    display: flex; align-items: center; gap: 5px;
+  .pg-browse-inline-btn {
+    font-size: 11px; font-weight: 500; color: #6b7280; background: none;
+    border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 9px; cursor: pointer;
+    white-space: nowrap; margin-top: 6px;
   }
-  .pg-browse-btn:hover { background: #f5f3ff; color: #5b21b6; border-color: #c4b5fd; }
-  .pg-browse-btn.active { background: #f5f3ff; color: #5b21b6; border-color: #a78bfa; }
+  .pg-browse-inline-btn:hover { background: #f5f3ff; color: #5b21b6; border-color: #c4b5fd; }
+  .pg-browse-inline-btn.active { background: #f5f3ff; color: #5b21b6; border-color: #a78bfa; }
   .pg-qbrowser {
-    display: none; position: absolute; bottom: calc(100% + 6px); left: 0; right: 0;
+    display: none; position: fixed;
     background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
-    box-shadow: 0 -4px 24px rgba(0,0,0,.12); z-index: 200; overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,.15); z-index: 2000; overflow: hidden; width: 420px;
   }
   .pg-qbrowser.open { display: block; }
   .pg-qb-tabs { display: flex; gap: 4px; padding: 10px 10px 0; border-bottom: 1px solid #f0f1f3; flex-wrap: wrap; }
@@ -590,17 +589,6 @@
 
       <div class="pg-form" id="pgForm"></div>
 
-      <div class="pg-browse-wrap">
-        <button class="pg-browse-btn" id="pgBrowseBtn" onclick="togglePgQBrowser()">
-          <span>📋</span> Browse questions
-        </button>
-        <div class="pg-qbrowser" id="pgQBrowser">
-          <div class="pg-qb-tabs" id="pgQbTabs"></div>
-          <input class="pg-qb-search" id="pgQbSearch" type="text" placeholder="Filter questions…">
-          <div class="pg-qb-list" id="pgQbList"></div>
-        </div>
-      </div>
-
       <button id="pgSendBtn" class="pg-send">Send request</button>
 
       <details class="pg-req-details">
@@ -635,6 +623,7 @@
     <div class="input-bar" style="flex-wrap:wrap">
       <input type="text" id="cmpQuery" class="cmp-query" placeholder="Ask one question — sent to every active side…"
              value="Who won the 2026 Winter Olympics men's hockey gold?">
+      <button class="pg-browse-inline-btn" id="cmpBrowseBtn" onclick="window.togglePgQBrowser(this, document.getElementById('cmpQuery'))">Browse questions</button>
       <button id="cmpRunBtn" onclick="runCompare()">Compare</button>
       <button id="cmpStopBtn" class="stop-btn" onclick="stopCompare()" style="display:none">Stop</button>
     </div>
@@ -1028,6 +1017,8 @@ function switchTab(tabId, btn) {
 let _pgQbData = null;
 let _pgQbOpen = false;
 let _pgQbActiveTab = 'bench50';
+let _pgQbAnchor = null;   // the button that opened the panel
+let _pgQbTarget = null;   // the input/textarea to fill
 
 async function _loadPgQbData() {
   if (_pgQbData) return;
@@ -1093,39 +1084,68 @@ function _renderPgQb(filter) {
   // Attach click handlers (using data index into filtered)
   list.querySelectorAll('.pg-qb-item').forEach((el, i) => {
     el.addEventListener('click', () => {
-      const query = filtered[i].query;
-      // Fill the query field: find the first text/textarea input in the form
-      // whose label or name suggests it's the query field
-      _fillPgQuery(query);
-      togglePgQBrowser();
+      _fillPgQuery(filtered[i].query);
+      // close panel
+      const panel = document.getElementById('pgQBrowser');
+      panel.classList.remove('open');
+      if (_pgQbAnchor) _pgQbAnchor.classList.remove('active');
+      _pgQbOpen = false;
+      _pgQbAnchor = null;
     });
   });
 }
 
 function _fillPgQuery(query) {
-  // The playground form is dynamic — find the query field by the endpoint's
-  // compare_query_field name or just the first textarea/text input in the form.
-  const form = document.getElementById('pgForm');
-  if (!form) return;
-  const input = form.querySelector('textarea, input[type="text"]');
-  if (!input) return;
-  input.value = query;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
+  if (_pgQbTarget) {
+    _pgQbTarget.value = query;
+    _pgQbTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    _pgQbTarget.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 }
 
-async function togglePgQBrowser() {
+function _positionPgQbPanel(anchor) {
   const panel = document.getElementById('pgQBrowser');
-  const btn   = document.getElementById('pgBrowseBtn');
-  if (_pgQbOpen) {
+  const r = anchor.getBoundingClientRect();
+  const panelH = 380;
+  const spaceBelow = window.innerHeight - r.bottom;
+  // position: fixed — coords are viewport-relative, no scrollY offset
+  if (spaceBelow >= panelH || spaceBelow >= r.top) {
+    panel.style.top = (r.bottom + 6) + 'px';
+  } else {
+    panel.style.top = Math.max(8, r.top - panelH - 6) + 'px';
+  }
+  let left = r.left;
+  if (left + 420 > window.innerWidth - 12) left = window.innerWidth - 432;
+  panel.style.left = Math.max(8, left) + 'px';
+}
+
+async function togglePgQBrowser(anchorEl, targetEl) {
+  const panel = document.getElementById('pgQBrowser');
+  // If clicking the same anchor while open — close
+  if (_pgQbOpen && _pgQbAnchor === anchorEl) {
     panel.classList.remove('open');
-    btn.classList.remove('active');
+    anchorEl.classList.remove('active');
     _pgQbOpen = false;
+    _pgQbAnchor = null;
+    _pgQbTarget = null;
     return;
   }
-  panel.classList.add('open');
-  btn.classList.add('active');
+  if (_pgQbAnchor) _pgQbAnchor.classList.remove('active');
+
+  _pgQbAnchor = anchorEl;
+  // targetEl explicitly passed (Compare tab) or find it in the same .pg-field row
+  if (targetEl) {
+    _pgQbTarget = targetEl;
+  } else {
+    const field = anchorEl && anchorEl.closest('.pg-field');
+    _pgQbTarget = field ? field.querySelector('textarea, input[type="text"]') : null;
+  }
+
+  if (_pgQbAnchor) _pgQbAnchor.classList.add('active');
   _pgQbOpen = true;
+  panel.classList.add('open');
+  _positionPgQbPanel(_pgQbAnchor || panel);
+
   if (!_pgQbData) {
     document.getElementById('pgQbList').innerHTML = '<div class="pg-qb-empty">Loading…</div>';
     await _loadPgQbData();
@@ -1140,14 +1160,21 @@ async function togglePgQBrowser() {
 // Close panel when clicking outside
 document.addEventListener('click', e => {
   if (!_pgQbOpen) return;
-  const wrap = document.getElementById('pgBrowseBtn').closest('.pg-browse-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('pgQBrowser').classList.remove('open');
-    document.getElementById('pgBrowseBtn').classList.remove('active');
-    _pgQbOpen = false;
-  }
+  const panel = document.getElementById('pgQBrowser');
+  if (panel.contains(e.target)) return;
+  if (_pgQbAnchor && _pgQbAnchor.contains(e.target)) return;
+  panel.classList.remove('open');
+  if (_pgQbAnchor) _pgQbAnchor.classList.remove('active');
+  _pgQbOpen = false;
+  _pgQbAnchor = null;
+  _pgQbTarget = null;
 });
 </script>
 
+<div class="pg-qbrowser" id="pgQBrowser">
+  <div class="pg-qb-tabs" id="pgQbTabs"></div>
+  <input class="pg-qb-search" id="pgQbSearch" type="text" placeholder="Filter questions…">
+  <div class="pg-qb-list" id="pgQbList"></div>
+</div>
 </body>
 </html>

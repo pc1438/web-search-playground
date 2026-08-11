@@ -239,6 +239,20 @@ function buildForm() {
   updateCompareFieldState();
   updateEndpointMeta();
   updateRequestPreview();
+
+  // Inject "Browse questions" button into the query field's row
+  const queryFieldName = ep.compareQueryField;
+  if (queryFieldName) {
+    const queryReader = pg.readers.find(r => r.name === queryFieldName);
+    if (queryReader && queryReader.el) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pg-browse-inline-btn";
+      btn.textContent = "Browse questions";
+      btn.onclick = () => window.togglePgQBrowser(btn);
+      queryReader.el.appendChild(btn);
+    }
+  }
 }
 
 // Total count of deprecated fields anywhere in the schema (recursive). Some may
