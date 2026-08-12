@@ -93,7 +93,7 @@ class AppHandler(SimpleHTTPRequestHandler):
         elif self.path == "/api/providers":
             self._send_json(200, registry.catalog())
         elif self.path in ("/api/questions", "/api/retrievalqa", "/api/simpleqa",
-                           "/api/deepsearchqa", "/api/browsecomp"):
+                           "/api/deepsearchqa", "/api/browsecomp", "/api/search40"):
             name = self.path.split("/")[-1]
             file_map = {
                 "questions":    "benchmark_questions_50.json",
@@ -101,6 +101,7 @@ class AppHandler(SimpleHTTPRequestHandler):
                 "simpleqa":     "simpleqa_questions.json",
                 "deepsearchqa": "deepsearchqa_questions.json",
                 "browsecomp":   "browsecomp_questions.json",
+                "search40":     "search40_questions.json",
             }
             qfile = APP_DIR.parent.parent / "use-cases" / "comparison" / file_map[name]
             self._serve_json_file(qfile)

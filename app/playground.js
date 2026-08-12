@@ -240,17 +240,32 @@ function buildForm() {
   updateEndpointMeta();
   updateRequestPreview();
 
-  // Inject "Browse questions" button into the query field's row
+  // Inject "Browse questions" button + inline panel into the query field's row
   const queryFieldName = ep.compareQueryField;
   if (queryFieldName) {
     const queryReader = pg.readers.find(r => r.name === queryFieldName);
     if (queryReader && queryReader.el) {
+      const targetInput = queryReader.el.querySelector('textarea, input[type="text"]');
+      const panelId = `pgQBrowser-ep-${pg.id || Date.now()}`;
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pg-browse-inline-btn";
-      btn.textContent = "Browse questions";
-      btn.onclick = () => window.togglePgQBrowser(btn);
+      btn.innerHTML = 'Browse questions <span class="pg-browse-info">i</span>';
+      btn._panelId = panelId;
+      btn._targetEl = targetInput;
+      btn.onclick = () => window.togglePgQBrowser(btn, targetInput);
+
+      const panel = document.createElement("div");
+      panel.className = "pg-qbrowser";
+      panel.id = panelId;
+
+      const subhint = document.createElement("div");
+      subhint.className = "pg-browse-subhint";
+      subhint.textContent = "pick a sample question to fill the query box";
       queryReader.el.appendChild(btn);
+      queryReader.el.appendChild(subhint);
+      queryReader.el.appendChild(panel);
     }
   }
 }
