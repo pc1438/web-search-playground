@@ -703,7 +703,7 @@
       <div class="input-bar cmp-input-bar">
         <input type="text" id="cmpQuery" class="cmp-query" placeholder="One question sent to every active side…"
                value="Who won the 2026 Winter Olympics men's hockey gold?">
-        <button class="cmp-browse-btn" id="cmpBrowseBtn" onclick="window.togglePgQBrowser('cmp', document.getElementById('cmpQuery'))">Browse questions <span class="pg-browse-info">i</span></button>
+        <button class="cmp-browse-btn" id="cmpBrowseBtn" onclick="window.togglePgQBrowser('cmp', document.getElementById('cmpQuery'))">Browse questions</button><span class="pg-info" data-tip="Opens a panel of curated test queries — click any to fill the search box. Six question sets available: general, RetrievalQA, SimpleQA, DeepSearchQA, BrowseComp, and Search40.">i</span>
         <button id="cmpRunBtn" onclick="runCompare()">Compare</button>
         <button id="cmpStopBtn" class="stop-btn" onclick="stopCompare()" style="display:none">Stop</button>
       </div>

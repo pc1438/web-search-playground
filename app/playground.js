@@ -256,10 +256,16 @@ function buildForm() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pg-browse-inline-btn";
-      btn.innerHTML = 'Browse questions <span class="pg-browse-info">i</span>';
+      btn.textContent = 'Browse questions';
       btn._panelId = panelId;
       btn._targetEl = targetInput;
       btn.onclick = () => window.togglePgQBrowser(btn, targetInput);
+
+      const browseInfo = el("span", {
+        class: "pg-info",
+        "data-tip": "Opens a panel of curated test queries — click any to fill the search box. Six question sets available: general, RetrievalQA, SimpleQA, DeepSearchQA, BrowseComp, and Search40.",
+        text: "i",
+      });
 
       const panel = document.createElement("div");
       panel.className = "pg-qbrowser";
@@ -269,6 +275,7 @@ function buildForm() {
       subhint.className = "pg-browse-subhint";
       subhint.textContent = "pick a sample question to fill the query box";
       queryReader.el.appendChild(btn);
+      queryReader.el.appendChild(browseInfo);
       queryReader.el.appendChild(subhint);
       queryReader.el.appendChild(panel);
     }
