@@ -49,6 +49,8 @@ SEARCH = Endpoint("search", "POST /v1/search — LLM-ready web + news results", 
     Param("include_domains", "csv", advanced=True, help="Allowlist (comma-separated; not with exclude_domains)."),
     Param("exclude_domains", "csv", advanced=True, help="Blocklist (comma-separated)."),
     Param("boost_domains", "csv", advanced=True, help="Boost these domains' ranking (up to 500)."),
+    Param("knowledge", "enum", values=["core"], advanced=True,
+          help="Return knowledge nodes (structured answers) alongside web results. Set to 'core' to enable; omit to disable."),
     Param("extraction", "group", optional=True, advanced=True,
           help="Content extraction mode (POST only). Choose highlights for query-relevant passages, or full_page to crawl and return complete page content.", fields=[
         Param("extraction_mode", "enum", required=True, values=["highlights", "full_page"],

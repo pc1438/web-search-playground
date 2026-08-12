@@ -691,6 +691,14 @@ function renderResponse(container, { httpOk, clientMs, data }) {
       container.appendChild(line);
     }
   } else if (results) {
+    // Knowledge nodes (You.com only) — rendered above organic results
+    const knowledgeNodes = Array.isArray(body.results && body.results.knowledge) ? body.results.knowledge : [];
+    if (knowledgeNodes.length) {
+      const section = el("div", { class: "pg-knowledge-section" });
+      section.appendChild(el("div", { class: "pg-knowledge-label", text: "Knowledge" }));
+      knowledgeNodes.forEach(k => section.appendChild(renderKnowledgeCard(k)));
+      container.appendChild(section);
+    }
     const list = el("div", { class: "pg-cards" });
     const shown = results.slice(0, 12);
     for (const r of shown) list.appendChild(renderResultCard(r));
@@ -787,6 +795,28 @@ const STD_KEYS = new Set(["title", "name", "url", "link", "id", "publishedDate",
   "summary", "description", "snippet", "excerpts", "subpages", "score",
   // SerpApi-common fields (keep cards clean; full data is in the raw tree)
   "position", "displayed_link", "redirect_link", "source", "thumbnail", "snippet_highlighted_words"]);
+
+function renderKnowledgeCard(k) {
+  const card = el("div", { class: "pg-knowledge-card" });
+  if (k.type) card.appendChild(el("div", { class: "pg-knowledge-type", text: k.type }));
+  if (k.title) card.appendChild(el("div", { class: "pg-knowledge-title", text: k.title }));
+  if (k.description) card.appendChild(el("div", { class: "pg-knowledge-desc", text: k.description }));
+  const footer = el("div", { class: "pg-knowledge-footer" });
+  const attrs = Array.isArray(k.attribution) ? k.attribution : [];
+  if (attrs.length) {
+    const srcEl = el("div", { class: "pg-knowledge-source" });
+    attrs.forEach((a, i) => {
+      if (i > 0) srcEl.appendChild(document.createTextNode(" · "));
+      const nameEl = el("strong", { text: a.name || "" });
+      srcEl.appendChild(nameEl);
+      if (a.source_description) srcEl.appendChild(document.createTextNode(" — " + a.source_description));
+    });
+    footer.appendChild(srcEl);
+  }
+  if (k.as_of) footer.appendChild(el("div", { class: "pg-knowledge-date", text: "as of " + k.as_of }));
+  if (footer.children.length) card.appendChild(footer);
+  return card;
+}
 
 function renderResultCard(r) {
   const url = r.url || r.link;   // SerpApi results use `link` rather than `url`
