@@ -41,7 +41,7 @@ SEARCH = Endpoint(
         Param("safe", "bool", advanced=True,
               help="Enable SafeSearch content filtering."),
         Param("highlights", "bool", advanced=True,
-              help="Generate query-relevant highlights per result (default true)."),
+              help="Improves description quality with query-relevant highlights. No separate field is returned — the effect appears in the description text only."),
         Param("scrapeFormats", "csv", advanced=True, placeholder="markdown, summary",
               help="Return full-page content per result. Options: markdown, summary, html. "
                    "Adds latency and credits — markdown gives full LLM-ready page text; "
