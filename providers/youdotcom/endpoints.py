@@ -73,7 +73,7 @@ RESEARCH = Endpoint("research", "POST /v1/research — deep research answer + so
 ])
 
 FINANCE = Endpoint("finance_research", "POST /v1/finance_research — finance/company research", "/v1/finance_research",
-    compare_query_field="input", docs_url=f"{DOCS}/research/v1-research", params=[
+    compare_query_field="input", docs_url=f"{DOCS}/finance/v1-finance-research", params=[
     Param("input", "text", required=True, placeholder="e.g. NVIDIA latest earnings and guidance",
           help="Finance/company research question."),
     Param("research_effort", "enum", values=EFFORTS, help="Depth: lite → exhaustive. Default standard."),

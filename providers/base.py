@@ -42,7 +42,7 @@ class Param:
     """One request-body field.
 
     `type` drives how the UI renders it and how the value is read back:
-        string | text | int | bool | enum | csv | date | group
+        string | text | int | bool | enum | csv | date | json | group
 
     A `group` is a nested object: set `fields` to its child Params. Mark it
     `optional=True` to render an enable checkbox (the param is omitted unless

@@ -110,6 +110,15 @@ class AppHandler(SimpleHTTPRequestHandler):
         else:
             self.send_error(404)
 
+    CSP = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src * data:; "
+        "connect-src 'self'; "
+        "object-src 'none'"
+    )
+
     def _serve_static(self, path, content_type):
         try:
             with open(path, "rb") as f:
@@ -121,6 +130,8 @@ class AppHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(content)))
         self.send_header("Access-Control-Allow-Origin", self.ALLOWED_ORIGIN)
+        if "text/html" in content_type:
+            self.send_header("Content-Security-Policy", self.CSP)
         self.end_headers()
         self.wfile.write(content)
 
@@ -138,6 +149,10 @@ class AppHandler(SimpleHTTPRequestHandler):
         self.wfile.write(content)
 
     def do_POST(self):
+        ct = self.headers.get("Content-Type", "")
+        if "application/json" not in ct:
+            self._send_json(415, {"error": "Content-Type must be application/json"})
+            return
         if self.path == "/api/compare":
             self._handle_compare()
         elif self.path == "/api/call":
@@ -296,16 +311,19 @@ class AppHandler(SimpleHTTPRequestHandler):
 
         self._start_sse()
         send = self._make_sse_sender()
-        results = {sid: None for sid, *_ in resolved}
+        completed = set()
 
         def run(sid, prov, eid, sparams):
             try:
-                results[sid] = prov.call(eid, sparams, timeout=THREAD_TIMEOUT)
+                result = prov.call(eid, sparams, timeout=THREAD_TIMEOUT)
             except ProviderKeyMissing as e:
-                results[sid] = {"error": str(e)}
+                result = {"error": str(e)}
             except Exception as e:
                 logger.error("%s (%s/%s) call failed: %s", sid, prov.id, eid, e, exc_info=True)
-                results[sid] = {"error": f"{prov.label} failed. Please try again."}
+                result = {"error": f"{prov.label} failed. Please try again."}
+            completed.add(sid)
+            send("result", {"side": sid, "provider": prov.id, "endpoint": eid,
+                            "label": labels[sid], "wrapper": result})
 
         threads = [threading.Thread(target=run, args=(sid, p, e, sp)) for sid, p, e, sp in resolved]
         for t in threads:
@@ -314,9 +332,9 @@ class AppHandler(SimpleHTTPRequestHandler):
             t.join(timeout=THREAD_TIMEOUT + 10)
 
         for sid, prov, eid, _ in resolved:
-            wrapper = results[sid] or {"error": f"{prov.label} timed out."}
-            send("result", {"side": sid, "provider": prov.id, "endpoint": eid,
-                            "label": labels[sid], "wrapper": wrapper})
+            if sid not in completed:
+                send("result", {"side": sid, "provider": prov.id, "endpoint": eid,
+                                "label": labels[sid], "wrapper": {"error": f"{prov.label} timed out."}})
 
         send("done", {})
 

@@ -3,8 +3,8 @@ providers/parallel/endpoints.py — Parallel Search + FindAll API schemas.
 
 Coverage verified against the live API (2026-07) since Parallel's public docs
 don't fully enumerate the search bodies. Accepted fields probed directly:
-  /v1/search (stable): objective, search_queries, session_id  (+ an undocumented
-      internal `mode` enum, deliberately NOT exposed — internal engine names).
+  /v1/search (stable): objective, search_queries, session_id, and `mode`
+      (enum: turbo/basic/advanced, verified live 2026-07; exposed as a param).
   /v1beta/search (beta): objective, search_queries, processor, max_results,
       max_chars_per_result, source_policy{include_domains, exclude_domains}, session_id.
   /v1beta/findall/entity-search: entity_type, objective, match_limit (complete).
@@ -79,7 +79,7 @@ TASK = Endpoint(
 
 ENTITY_SEARCH = Endpoint(
     "entity-search", "POST /v1beta/findall/entity-search — find people or companies",
-    "/v1beta/findall/entity-search", compare_params=["entity_type"],
+    "/v1beta/findall/entity-search",
     docs_url="https://docs.parallel.ai/findall-api/entity-search", params=[
         Param("entity_type", "enum", required=True, values=ENTITY_TYPES,
               help="The kind of entity to search for."),

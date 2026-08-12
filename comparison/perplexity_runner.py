@@ -43,10 +43,9 @@ load_dotenv("env.txt") or load_dotenv(".env")
 AGENT_ENDPOINT = "https://api.perplexity.ai/v1/agent"
 AGENT_TIMEOUT = 300  # Agent API can take 1-3 minutes for deep queries
 
-PERPLEXITY_SAC_CONFIG = {
+PERPLEXITY_AGENT_CONFIG = {
     "display_name": "Claude + Perplexity Agent API",
     "model": "anthropic/claude-sonnet-4-6",
-    "sac_cost_per_call": 0.05,  # fallback est.; actual cost in usage.cost.total_cost
 }
 
 AGENT_INSTRUCTIONS = (
@@ -62,7 +61,7 @@ AGENT_INSTRUCTIONS = (
 
 # ─── Agent API runner ────────────────────────────────────────────────────────
 
-def run_perplexity_sac(question: str, api_key: str, on_progress=None, tools=None, model=None, timeout=AGENT_TIMEOUT) -> dict:
+def run_perplexity_agent(question: str, api_key: str, on_progress=None, tools=None, model=None, timeout=AGENT_TIMEOUT) -> dict:
     """Run a query through Claude inside Perplexity's Agent API with streaming.
 
     Uses stream=True so output items (search_results, fetch_url_results, message)
@@ -81,7 +80,7 @@ def run_perplexity_sac(question: str, api_key: str, on_progress=None, tools=None
     }
     tool_names = tools or ["web_search", "fetch_url"]
     payload = {
-        "model": model or PERPLEXITY_SAC_CONFIG["model"],
+        "model": model or PERPLEXITY_AGENT_CONFIG["model"],
         "input": question,
         "instructions": AGENT_INSTRUCTIONS,
         "tools": [{"type": t} for t in tool_names],
@@ -89,8 +88,7 @@ def run_perplexity_sac(question: str, api_key: str, on_progress=None, tools=None
     }
 
     stats = {
-        "path": "Claude (Perplexity Agent API)",
-        "model": model or PERPLEXITY_SAC_CONFIG["model"],
+        "model": model or PERPLEXITY_AGENT_CONFIG["model"],
         "total_tokens": 0,
         "input_tokens": 0,
         "output_tokens": 0,
@@ -261,7 +259,7 @@ def main():
     question = " ".join(sys.argv[1:]).strip()
     if not question:
         print("Usage: python perplexity_runner.py \"your question here\"")
-        print(f"  Model: {PERPLEXITY_SAC_CONFIG['model']} via Perplexity Agent API")
+        print(f"  Model: {PERPLEXITY_AGENT_CONFIG['model']} via Perplexity Agent API")
         sys.exit(1)
 
     api_key = os.environ.get("PERPLEXITY_API_KEY", "")
@@ -269,12 +267,12 @@ def main():
         print("Error: PERPLEXITY_API_KEY not set")
         sys.exit(1)
 
-    print(f"Model:  {PERPLEXITY_SAC_CONFIG['model']} via Perplexity Agent API")
+    print(f"Model:  {PERPLEXITY_AGENT_CONFIG['model']} via Perplexity Agent API")
     print(f"Query:  \"{question}\"")
     print()
 
     try:
-        stats = run_perplexity_sac(
+        stats = run_perplexity_agent(
             question, api_key,
             on_progress=lambda m: print(f"  {m}"),
         )

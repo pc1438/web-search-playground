@@ -68,10 +68,10 @@ class ParallelProvider(Provider):
 
         if status != "completed":
             return {
-                "ok": False, "status": 200, "elapsed_ms": elapsed(), "url": status_url,
+                "ok": False, "status": 504, "elapsed_ms": elapsed(), "url": status_url,
                 "request": params,
-                "body": {"note": f"Run status '{status}' — not completed within {timeout}s. "
-                                 f"Fetch {status_url}/result later to retrieve it.", "run": run},
+                "body": {"error": f"Run {run_id} status '{status}' — not completed within {timeout}s. "
+                                  f"Fetch {status_url}/result to retrieve it when ready."},
             }
 
         result = requests.get(f"{status_url}/result", headers=headers, timeout=timeout)
