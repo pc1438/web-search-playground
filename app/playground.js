@@ -274,8 +274,10 @@ function buildForm() {
       const subhint = document.createElement("div");
       subhint.className = "pg-browse-subhint";
       subhint.textContent = "pick a sample question to fill the query box";
-      queryReader.el.appendChild(btn);
-      queryReader.el.appendChild(browseInfo);
+      const browseRow = el("div", { class: "pg-browse-row" });
+      browseRow.appendChild(btn);
+      browseRow.appendChild(browseInfo);
+      queryReader.el.appendChild(browseRow);
       queryReader.el.appendChild(subhint);
       queryReader.el.appendChild(panel);
     }
