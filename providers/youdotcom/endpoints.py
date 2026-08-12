@@ -1,14 +1,15 @@
 """
 providers/youdotcom/endpoints.py — You.com API schemas.
 
-You.com exposes four endpoints across two hosts (verified against
-you.com/docs, 2026-07):
-  Search  — GET/POST ydc-index.io/v1/search   (LLM-ready web results)
-  Contents— POST     ydc-index.io/v1/contents (crawl/extract known URLs)
-  Research— POST     api.you.com/v1/research   (multi-step research + synthesis)
-  Finance — POST     api.you.com/v1/finance_research (finance/company research)
+You.com exposes five endpoints across two hosts (verified against
+you.com/docs, 2026-08):
+  Search     — POST    ydc-index.io/v1/search         (LLM-ready web results; extraction param added 2026-08)
+  Eco Search — GET     ydc-index.io/v1/eco_search     (lightweight, cheap, model-training-friendly)
+  Contents   — POST    ydc-index.io/v1/contents       (crawl/extract known URLs)
+  Research   — POST    api.you.com/v1/research        (multi-step research + synthesis)
+  Finance    — POST    api.you.com/v1/finance_research (finance/company research)
 All use the `X-API-Key` header. The provider's default host is api.you.com;
-Search/Contents override it to ydc-index.io via Endpoint.base_url.
+Search/Contents/Eco override it to ydc-index.io via Endpoint.base_url.
 """
 
 from providers.base import Param, Endpoint
@@ -16,7 +17,7 @@ from providers.base import Param, Endpoint
 YDC_INDEX = "https://ydc-index.io"
 EFFORTS = ["lite", "standard", "deep", "exhaustive"]
 SAFESEARCH = ["off", "moderate", "strict"]
-LIVECRAWL = ["web", "news", "all"]
+LIVECRAWL = ["web", "news", "all"]   # deprecated; kept for the deprecated livecrawl param
 FRESHNESS_HELP = "day, week, month, year, or a YYYY-MM-DDtoYYYY-MM-DD range."
 COUNTRIES = ["AR", "AU", "AT", "BE", "BR", "CA", "CL", "DK", "FI", "FR", "DE", "HK", "IN", "ID",
              "IT", "JP", "KR", "MY", "MX", "NL", "NZ", "NO", "CN", "PL", "PT", "PH", "RU", "SA",
@@ -48,9 +49,28 @@ SEARCH = Endpoint("search", "POST /v1/search — LLM-ready web + news results", 
     Param("include_domains", "csv", advanced=True, help="Allowlist (comma-separated; not with exclude_domains)."),
     Param("exclude_domains", "csv", advanced=True, help="Blocklist (comma-separated)."),
     Param("boost_domains", "csv", advanced=True, help="Boost these domains' ranking (up to 500)."),
-    Param("livecrawl", "enum", advanced=True, values=LIVECRAWL, help="Return full page content (adds latency + cost)."),
-    Param("livecrawl_formats", "csv", advanced=True, help="Crawled content formats: html, markdown."),
-    Param("crawl_timeout", "int", advanced=True, min=1, max=60, help="Seconds to wait for page content (default 10)."),
+    Param("extraction", "group", optional=True, advanced=True,
+          help="Content extraction mode (POST only). Choose highlights for query-relevant passages, or full_page to crawl and return complete page content.", fields=[
+        Param("extraction_mode", "enum", required=True, values=["highlights", "full_page"],
+              help="highlights — query-relevant passages optimised for agents. full_page — full crawled content."),
+        Param("full_page", "group", optional=True,
+              help="Tuning for full_page mode only.", fields=[
+            Param("extraction_formats", "csv", placeholder="markdown",
+                  help="Content formats to return: markdown, html. Default: markdown."),
+        ]),
+    ]),
+    Param("crawl_timeout", "int", advanced=True, min=1, max=60, help="Page crawl timeout in seconds (default 10). Used with extraction."),
+    Param("livecrawl", "enum", advanced=True, deprecated=True, values=LIVECRAWL, help="Deprecated — use extraction instead. Return full page content."),
+    Param("livecrawl_formats", "csv", advanced=True, deprecated=True, help="Deprecated — use extraction.full_page.extraction_formats instead."),
+])
+
+ECO_SEARCH = Endpoint("eco_search", "GET /v1/eco_search — lightweight search (fast + cheap)", "/v1/eco_search",
+    method="GET", base_url=YDC_INDEX, compare_query_field="query",
+    docs_url=f"{DOCS}/search/v1-eco_search", params=[
+    Param("query", "text", required=True, placeholder="e.g. best open-source vector databases",
+          help="Search query. Returns snippets from web results."),
+    Param("offset", "int", min=0, max=9, placeholder="0",
+          help="Pagination offset (0–9). Each page returns up to 10 results."),
 ])
 
 CONTENTS = Endpoint("contents", "POST /v1/contents — crawl/extract known URLs", "/v1/contents",
@@ -81,5 +101,5 @@ FINANCE = Endpoint("finance_research", "POST /v1/finance_research — finance/co
     Param("output_schema", "json", advanced=True, help="JSON Schema for structured output."),
 ])
 
-ENDPOINTS = {ep.id: ep for ep in (SEARCH, CONTENTS, RESEARCH, FINANCE)}
-ENDPOINT_ORDER = ["search", "contents", "research", "finance_research"]
+ENDPOINTS = {ep.id: ep for ep in (SEARCH, ECO_SEARCH, CONTENTS, RESEARCH, FINANCE)}
+ENDPOINT_ORDER = ["search", "eco_search", "contents", "research", "finance_research"]
