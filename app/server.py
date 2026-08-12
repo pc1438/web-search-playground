@@ -86,6 +86,8 @@ class AppHandler(SimpleHTTPRequestHandler):
         self.wfile = self.request.makefile("wb", buffering=0)
 
     def do_GET(self):
+        path = self.path.split("?")[0]  # strip query strings
+        self.path = path
         if self.path in ("/", "/index.html"):
             self._serve_static(APP_DIR / "index.html", "text/html; charset=utf-8")
         elif self.path == "/playground.js":

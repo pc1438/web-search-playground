@@ -180,9 +180,9 @@
   /* ─── Exa playground ─────────────────────────────────────────────── */
   /* Full-height request column (colored to the bottom regardless of form length),
      with a clear divider from the response column. */
-  .pg-wrap { display: grid; grid-template-columns: 440px 1fr; gap: 0; min-height: calc(100vh - 185px); align-items: stretch; }
-  .pg-left { padding: 20px 32px; border-right: 2px solid #cbd0d6; background: #eef1f5; }
-  .pg-right { padding: 20px 32px; min-width: 0; background: #ffffff; }
+  .pg-wrap { display: grid; grid-template-columns: 440px 1fr; gap: 0; height: calc(100vh - 185px); align-items: stretch; }
+  .pg-left { padding: 20px 32px; border-right: 2px solid #cbd0d6; background: #eef1f5; overflow-y: auto; }
+  .pg-right { padding: 20px 32px; min-width: 0; background: #ffffff; overflow-y: auto; }
   .pg-left-label, .pg-right-label { font-size: 12px; font-weight: 800; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
 
   .pg-endpoint-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -205,10 +205,16 @@
   .pg-select { cursor: pointer; }
 
   .pg-compare-wrap {
-    background: #f1f5f9; border: 1px solid #e4e6e9; border-radius: 8px;
-    padding: 10px 12px; margin-bottom: 16px;
+    background: #faf8ff; border: 1px solid #ddd6fe;
+    border-left: 3px solid #7c3aed;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;
   }
-  .pg-compare-on { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pg-compare-toggle-row { display: flex; align-items: center; gap: 8px; }
+  .pg-compare-toggle-row .pg-check { flex-shrink: 0; }
+  .pg-compare-title { font-size: 12.5px; font-weight: 700; color: #5b21b6; }
+  .pg-compare-desc { font-size: 11.5px; color: #6b7280; margin: 3px 0 0 22px; line-height: 1.4; }
+  .pg-compare-body { margin-top: 10px; padding-top: 10px; border-top: 1px solid #ede9fe; }
+  .pg-compare-on { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
   .pg-compare-on-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin-right: 2px; }
   .pg-onpill {
     font-size: 12px; padding: 3px 12px; border-radius: 20px; cursor: pointer;
@@ -216,7 +222,7 @@
     font-family: 'SF Mono', monospace;
   }
   .pg-onpill:hover { border-color: #9ca3af; }
-  .pg-onpill.active { background: #3d434d; border-color: #3d434d; color: #fff; }
+  .pg-onpill.active { background: #6d28d9; border-color: #6d28d9; color: #fff; }
   .pg-cat-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; }
   .pg-cat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #5a6270; cursor: pointer; }
 
@@ -228,12 +234,13 @@
   .pg-overridden .pg-label::after { content: " — set in Compare mode"; color: #9ca3af; font-weight: 400; text-transform: none; }
   .pg-deprecated .pg-label::after { content: " · deprecated"; color: #b0895a; font-weight: 400; text-transform: none; }
   /* Two short scalars pair up per row; roomy fields (.pg-full) span the whole row. */
-  .pg-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; align-items: start; }
+  .pg-form { display: flex; flex-direction: column; gap: 10px; }
   .pg-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .pg-full { grid-column: 1 / -1; }   /* groups + roomy fields span both columns */
-  .pg-label { font-size: 12px; font-weight: 700; color: #5b21b6; font-family: 'SF Mono', 'Fira Code', monospace; display: flex; align-items: center; gap: 4px; }
+  .pg-full { }
+  .pg-label-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .pg-label { font-size: 12px; font-weight: 700; color: #5b21b6; font-family: 'SF Mono', 'Fira Code', monospace; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .pg-label-name { background: #f0ebff; border-radius: 4px; padding: 1px 6px; letter-spacing: -.01em; }
-  .pg-help { font-size: 11px; color: #6b7280; font-family: system-ui, sans-serif; font-weight: 400; line-height: 1.4; margin-top: -1px; }
+  .pg-help { font-size: 11px; color: #6b7280; font-family: system-ui, sans-serif; font-weight: 400; line-height: 1.4; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pg-req { color: #dc2626; }
   .pg-invalid .pg-input { border-color: #dc2626; }
   .pg-invalid .pg-label { color: #dc2626; }
@@ -554,12 +561,24 @@
   .cmp-vs { font-size: 13px; font-weight: 700; color: #8c959f; }
   .cmp-query { flex: 1; min-width: 260px; }
   /* Setup section — grouped + labeled so it reads as "configure", distinct from results */
-  .cmp-setup { background: #eef1f5; border: 1px solid #e4e6e9; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+  .cmp-setup { margin-bottom: 16px; }
   .cmp-setup .cmp-config { margin-bottom: 0; }
-  .cmp-setup-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #8c959f; margin-bottom: 8px; }
+  .cmp-section { background: #fff; border: 1px solid #e4e6e9; border-radius: 10px; margin: 12px 24px 0; overflow: hidden; }
+  .cmp-section-label { font-size: 12px; font-weight: 800; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.08em; padding: 12px 20px; border-bottom: 1px solid #e4e6e9; background: #faf8ff; }
+  .cmp-section-label.cmp-config-toggle { display: flex; align-items: center; cursor: pointer; user-select: none; }
+  .cmp-section-label.cmp-config-toggle:hover { background: #f3f0ff; }
+  .cmp-input-bar { background: transparent; border-bottom: none; padding: 12px 20px 8px; }
   .cmp-query-row { display: flex; align-items: center; gap: 8px; }
-  .cmp-config-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
-  .cmp-config-toggle:hover { color: #5a6270; }
+  .cmp-query-row #cmpQuery { flex: 1; background: #fff; border: 1px solid #d0d3d8; border-radius: 8px; padding: 9px 14px; font-size: 14px; outline: none; min-width: 0; color: #1f2328; }
+  .cmp-query-row #cmpQuery:focus { border-color: #8c959f; }
+  .cmp-browse-btn {
+    font-size: 14px; font-weight: 600; color: #6d28d9;
+    background: #ede9fe; border: 1.5px solid #c4b5fd; border-radius: 8px;
+    padding: 10px 16px; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .cmp-browse-btn:hover { background: #ddd6fe; border-color: #a78bfa; }
+  .cmp-browse-btn.active { background: #ddd6fe; border-color: #7c3aed; }
   .cmp-config-toggle .pg-chevron { margin-left: auto; }
   .cmp-config-toggle.cmp-collapsed .pg-chevron { transform: rotate(-90deg); }
   #cmpConfig.cmp-hidden { display: none; }
@@ -568,13 +587,17 @@
   /* Results header — clear boundary between the setup above and responses below */
   .cmp-results-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #5a6270; margin: 0 0 14px; padding-top: 18px; border-top: 2px solid #e4e6e9; }
   /* Two configurable sides — each a provider/endpoint picker + its own form. */
-  .cmp-config { display: grid; gap: 16px; margin-bottom: 18px; }
-  #cmpConfig { grid-template-columns: repeat(4, minmax(0, 1fr)); }   /* four slots, one row */
+  .cmp-config { display: grid; gap: 16px; padding: 16px 20px; }
+  #cmpConfig { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .cmp-col { border: 1px solid #e4e6e9; border-radius: 10px; padding: 14px; background: #fafafa; }
-  .cmp-col-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-  .cmp-col-head .cmp-select { min-width: 0; padding: 8px 10px; font-size: 13px; }
-  .cmp-col .pg-form { background: transparent; }
-  .cmp-col-off { opacity: 0.55; }                     /* a "None" slot is inactive */
+  .cmp-col-head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .cmp-col-head > .cmp-select { min-width: 0; padding: 8px 10px; font-size: 13px; }
+  .cmp-ep-bar { margin-bottom: 0; }
+  .cmp-ep-bar .cmp-ep-sel { flex: 1; min-width: 0; }
+  .cmp-ep-desc { margin: 4px 0 0; font-size: 12.5px; }
+  .cmp-col .pg-form { background: transparent; grid-template-columns: 1fr; gap: 10px; }
+  .cmp-col .pg-full { grid-column: 1; }
+  .cmp-col-off { opacity: 0.55; }
   .cmp-col-off .cmp-col-head { margin-bottom: 0; }
   #cmpResults .answer-pane { opacity: 1; }
   /* Result panes: one column per active side, in a single row. */
@@ -632,8 +655,12 @@
       <div class="pg-endpoint-desc" id="pgEndpointMeta"></div>
 
       <div class="pg-compare-wrap" id="pgCompareWrap">
-        <label class="pg-bool"><input type="checkbox" id="pgCompareToggle" class="pg-check"> <span>Compare mode — fan the same query across one field's values</span></label>
-        <div id="pgCompareBody" style="display:none">
+        <div class="pg-compare-toggle-row">
+          <input type="checkbox" id="pgCompareToggle" class="pg-check">
+          <span class="pg-compare-title">Compare mode</span>
+        </div>
+        <div class="pg-compare-desc" id="pgCompareDesc">Send the same query once per value of a chosen field — see each response side by side.</div>
+        <div class="pg-compare-body" id="pgCompareBody" style="display:none">
           <div class="pg-compare-on" id="pgCompareOn"></div>
           <div class="pg-cat-checks" id="pgCatChecks"></div>
         </div>
@@ -670,26 +697,25 @@
 <!-- COMPARE TAB — provider-vs-provider picker                          -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <div class="tab-panel" id="tab-compare">
-  <div class="tab-intro">
-    <strong>Head-to-head</strong> — run one question through up to <strong>four</strong> endpoints and compare their <strong>raw responses</strong> side by side.
-    <br><small style="color:#8c959f"><strong>1.</strong> Pick a provider + endpoint for each side you want (set a side to <em>— None —</em> to skip it). &nbsp;<strong>2.</strong> Type one question — it's sent to every active side. &nbsp;<strong>3.</strong> Hit <strong>Compare</strong>. &nbsp;Deep-research calls can take 30s–3min; keys live in <code>env.txt</code>.</small>
-  </div>
-
   <div class="cmp-setup">
-    <div class="cmp-query-row">
-      <input type="text" id="cmpQuery" class="cmp-query" placeholder="Ask one question — sent to every active side…"
-             value="Who won the 2026 Winter Olympics men's hockey gold?">
-      <button class="pg-browse-inline-btn" id="cmpBrowseBtn" onclick="window.togglePgQBrowser('cmp', document.getElementById('cmpQuery'))">Browse questions <span class="pg-browse-info">i</span></button>
-      <button id="cmpRunBtn" onclick="runCompare()">Compare</button>
-      <button id="cmpStopBtn" class="stop-btn" onclick="stopCompare()" style="display:none">Stop</button>
+    <div class="cmp-section">
+      <div class="cmp-section-label">Query — sent to all active endpoints</div>
+      <div class="input-bar cmp-input-bar">
+        <input type="text" id="cmpQuery" class="cmp-query" placeholder="One question sent to every active side…"
+               value="Who won the 2026 Winter Olympics men's hockey gold?">
+        <button class="cmp-browse-btn" id="cmpBrowseBtn" onclick="window.togglePgQBrowser('cmp', document.getElementById('cmpQuery'))">Browse questions <span class="pg-browse-info">i</span></button>
+        <button id="cmpRunBtn" onclick="runCompare()">Compare</button>
+        <button id="cmpStopBtn" class="stop-btn" onclick="stopCompare()" style="display:none">Stop</button>
+      </div>
+      <div class="pg-qbrowser" id="pgQBrowser-cmp"></div>
     </div>
-    <div class="pg-browse-subhint" style="margin-top:4px">pick a sample question to fill the query box above</div>
-    <div class="pg-qbrowser" id="pgQBrowser-cmp"></div>
-    <div class="cmp-setup-label cmp-config-toggle" id="cmpConfigToggle" onclick="toggleCmpConfig()" style="margin-top:16px">
-      <span>Compare up to 4 endpoints · set any to “— None —” to skip</span>
-      <span class="pg-chevron"></span>
+    <div class="cmp-section">
+      <div class="cmp-section-label cmp-config-toggle" id="cmpConfigToggle" onclick="toggleCmpConfig()">
+        <span>Endpoints — set any to "— None —" to skip</span>
+        <span class="pg-chevron"></span>
+      </div>
+      <div class="cmp-config" id="cmpConfig"></div>
     </div>
-    <div class="cmp-config" id="cmpConfig"></div>
   </div>
 
   <div class="status-bar" id="cmpStatus"><span class="spinner"></span> <span id="cmpStatusText">Starting…</span></div>
@@ -709,37 +735,75 @@
 <div class="about-section">
 
   <h2>What this is</h2>
-  <p>A <strong>schema-driven playground for search APIs</strong> across providers, with two modes:</p>
+  <p>A <strong>schema-driven playground for search APIs</strong> across 10 providers, with two modes:</p>
   <ul style="font-size:13.5px;line-height:1.7;color:#5a6270;padding-left:22px;margin:0 0 10px">
-    <li><strong>Playground</strong> — each provider is a tab (<strong>Brave · Ceramic · Exa · Parallel · Perplexity · SerpApi · Tavily · You.com</strong>); pick an endpoint, fill a form generated from its schema, and inspect the raw response.</li>
-    <li><strong>Compare</strong> — configure <em>up to four</em> comparable endpoints (provider + endpoint + parameters), ask one question, and see each endpoint's raw response side by side — the same view as the provider tabs.</li>
+    <li><strong>Playground</strong> — each provider is a tab (<strong>Brave · Ceramic · Exa · Firecrawl · Octen · Parallel · Perplexity · SerpApi · Tavily · You.com</strong>); pick an endpoint, fill a form generated from its schema, and inspect the raw response.</li>
+    <li><strong>Compare</strong> — configure up to four endpoints side by side (any provider + endpoint + parameters), type one question, and see each raw response in parallel — the same view as the provider tabs, minus the Browse questions button.</li>
   </ul>
 
   <hr class="about-divider">
 
+  <h2>Providers &amp; endpoints</h2>
+  <table class="about-table">
+    <thead><tr><th>Provider</th><th>Endpoints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Brave</strong></td><td>web · news · images · videos · suggest · spellcheck · summarizer · local POIs · local descriptions</td><td>GET query-param API; <code>X-Subscription-Token</code> auth</td></tr>
+      <tr><td><strong>Ceramic</strong></td><td>search</td><td>Web-scale keyword search (Bearer); reports <code>executionTime</code> server-side</td></tr>
+      <tr><td><strong>Exa</strong></td><td>search · contents · answer</td><td>Plain JSON POST; <code>x-api-key</code> auth. Fan-out compare across <em>category</em> or <em>type</em></td></tr>
+      <tr><td><strong>Firecrawl</strong></td><td>search</td><td>Web search + optional full-page scrape in one call (<code>scrapeFormats</code>: markdown / summary / html)</td></tr>
+      <tr><td><strong>Octen</strong></td><td>search · broad-search · answer · extract</td><td>Bearer auth; broad-search for high-recall retrieval, answer for direct responses</td></tr>
+      <tr><td><strong>Parallel</strong></td><td>search · search-beta · task · entity-search</td><td>Turbo / basic / advanced modes; Task API for async jobs; entity-search fan-out across <em>entity_type</em></td></tr>
+      <tr><td><strong>Perplexity</strong></td><td>search · agent</td><td>Agent endpoint streams SSE; <code>call()</code> overridden for async runner</td></tr>
+      <tr><td><strong>SerpApi</strong></td><td>search</td><td>GET /search across engines (Google · Bing · DDG · …); <code>?api_key=</code> query auth</td></tr>
+      <tr><td><strong>Tavily</strong></td><td>search · extract · map · crawl</td><td>Bearer auth; extract pulls full content from a URL list</td></tr>
+      <tr><td><strong>You.com</strong></td><td>search · contents · research · finance_research</td><td>Bearer auth; research returns a structured multi-source report</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="about-divider">
+
+  <h2>Browse questions</h2>
+  <p>Every query box has a <strong>Browse questions</strong> button that opens a panel of curated test queries — click any to fill the box. Six question sets are available:</p>
+  <table class="about-table">
+    <thead><tr><th>Tab</th><th>Source</th><th>What it covers</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Search 40</strong></td><td><code>training/search-judge/data/raw/</code></td><td>40 search-judge queries across news, product, factual, and research categories (default tab)</td></tr>
+      <tr><td><strong>LLM Questions</strong></td><td>Curated benchmark</td><td>50 general-purpose questions across Tier 1–4 difficulty bands</td></tr>
+      <tr><td><strong>RetrievalQA</strong></td><td>RetrievalQA benchmark</td><td>Knowledge retrieval questions requiring factual lookup</td></tr>
+      <tr><td><strong>SimpleQA</strong></td><td>SimpleQA benchmark</td><td>Simple factual questions with unambiguous answers</td></tr>
+      <tr><td><strong>DeepSearchQA</strong></td><td>DeepSearchQA benchmark</td><td>Multi-hop and complex reasoning questions</td></tr>
+      <tr><td><strong>BrowseComp</strong></td><td>BrowseComp benchmark</td><td>Web-navigation and comprehension questions</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:#5a6270;margin-top:8px">Questions are grouped by category and filterable by keyword. Questions are served from <code>/api/questions</code>, <code>/api/search40</code>, etc. — JSON files on disk, no database needed.</p>
+
+  <hr class="about-divider">
+
   <h2>Design principle — one provider, one set of files</h2>
-  <p>The goal: if someone wants to work on Perplexity, its code is <strong>one clear package</strong>, not logic strewn across the server and the frontend. So every provider is a self-contained package that implements a shared contract, the server is a thin dispatcher over a registry, and the frontend is a generic renderer with <em>no</em> provider-specific code.</p>
+  <p>The goal: if someone wants to work on Perplexity, its code is <strong>one clear package</strong>, not logic strewn across the server and the frontend. Every provider is a self-contained package that implements a shared contract; the server is a thin dispatcher over a registry; the frontend is a generic renderer with <em>no</em> provider-specific code.</p>
 
   <div class="arch-tree">competitor_search/
 ├── <span class="ah">providers/</span>            <span class="ac"># one package per provider — the core of the app</span>
 │   ├── <span class="af">base.py</span>          <span class="ac"># the contract: Param · Endpoint · Provider (+ compare)</span>
 │   ├── <span class="af">registry.py</span>      <span class="ac"># the one list of which providers exist</span>
-│   ├── <span class="ah">exa/</span>             <span class="ac"># every provider/ folder has the same 3 files (below) — Exa shown as the example</span>
+│   ├── <span class="ah">exa/</span>             <span class="ac"># every provider/ folder has the same 3 files — Exa shown as example</span>
 │   │   ├── <span class="af">__init__.py</span>  <span class="ac"># exports the Provider subclass</span>
 │   │   ├── <span class="af">provider.py</span>  <span class="ac"># ExaProvider: identity, auth, endpoints, call()</span>
 │   │   └── <span class="af">endpoints.py</span> <span class="ac"># /search /contents /answer schemas</span>
 │   ├── <span class="ah">youdotcom/</span>       <span class="ac"># You.com — search / contents / research / finance_research</span>
-│   ├── <span class="ah">perplexity/</span>      <span class="ac"># Perplexity Agent API (Bearer auth, streaming call())</span>
-│   ├── <span class="ah">parallel/</span>        <span class="ac"># /v1/search (mode: turbo/basic/advanced) + /v1beta/search + /v1/tasks/runs (Task API) + FindAll</span>
-│   ├── <span class="ah">tavily/</span>          <span class="ac"># Tavily — search / extract / map / crawl (Bearer)</span>
-│   ├── <span class="ah">brave/</span>           <span class="ac"># Brave — GET query-param API (web/news/images/videos + suggest/spellcheck/summarizer/local)</span>
-│   ├── <span class="ah">serpapi/</span>         <span class="ac"># SerpApi — GET /search across engines (google/bing/ddg/…); ?api_key= query auth</span>
-│   └── <span class="ah">ceramic/</span>         <span class="ac"># Ceramic — web-scale keyword search (Bearer); reports server-side executionTime</span>
+│   ├── <span class="ah">perplexity/</span>      <span class="ac"># Perplexity — search + SSE-streaming agent call()</span>
+│   ├── <span class="ah">parallel/</span>        <span class="ac"># Parallel — search / search-beta / task / entity-search</span>
+│   ├── <span class="ah">tavily/</span>          <span class="ac"># Tavily — search / extract / map / crawl</span>
+│   ├── <span class="ah">brave/</span>           <span class="ac"># Brave — GET query-param (web/news/images/videos/suggest/…/local)</span>
+│   ├── <span class="ah">serpapi/</span>         <span class="ac"># SerpApi — GET /search across engines; ?api_key= query auth</span>
+│   ├── <span class="ah">ceramic/</span>         <span class="ac"># Ceramic — web-scale keyword search; reports executionTime</span>
+│   ├── <span class="ah">firecrawl/</span>       <span class="ac"># Firecrawl — web search + optional per-result scrape (markdown/summary/html)</span>
+│   └── <span class="ah">octen/</span>           <span class="ac"># Octen — search / broad-search / answer / extract</span>
 ├── <span class="ah">app/</span>                 <span class="ac"># thin web layer over providers/</span>
-│   ├── <span class="af">server.py</span>        <span class="ac"># /api/providers · /api/call · /api/compare</span>
-│   ├── <span class="af">playground.js</span>    <span class="ac"># generic renderer — fetches catalog, no per-provider code</span>
+│   ├── <span class="af">server.py</span>        <span class="ac"># GET /api/providers · /api/questions · /api/search40 · POST /api/call · /api/compare</span>
+│   ├── <span class="af">playground.js</span>    <span class="ac"># generic renderer — fetches catalog, no per-provider code; Browse questions panel</span>
 │   └── <span class="af">index.html</span>       <span class="ac"># tabs, form shell, compare picker, this About page</span>
-└── <span class="ah">comparison/</span>          <span class="ac"># perplexity_runner.py — SSE Agent-API runner used by call()</span></div>
+└── <span class="ah">comparison/</span>          <span class="ac"># benchmark question JSON files (search40, simpleqa, browsecomp, …)</span></div>
 
   <hr class="about-divider">
 
@@ -748,12 +812,12 @@
   <table class="about-table">
     <thead><tr><th>Class</th><th>Is</th><th>Key parts</th></tr></thead>
     <tbody>
-      <tr><td><code>Param</code></td><td>One request-body field</td><td><code>name</code>, <code>type</code> (string·text·int·bool·enum·csv·date·json·group), <code>values</code>, nested <code>fields</code> for objects. Flags steer the form: <code>required</code>, <code>optional</code> (group enable), <code>deprecated</code> (hidden behind a toggle), <code>advanced</code> (tucked into a collapsed <em>Advanced options</em> group). Renders to a form control; serialized via <code>to_dict()</code>.</td></tr>
-      <tr><td><code>Endpoint</code></td><td>One API operation</td><td><code>method</code>, <code>path</code>, and its list of <code>Param</code>s.</td></tr>
-      <tr><td><code>Provider</code></td><td>A provider</td><td><code>base_url</code>, <code>auth_header</code>/<code>auth_prefix</code>, <code>key_env</code>, <code>endpoints</code>. <code>call()</code> runs the request behind both the playground and Compare (default = plain JSON POST; override for streaming/async); <code>catalog()</code> serializes it for the UI.</td></tr>
+      <tr><td><code>Param</code></td><td>One request-body field</td><td><code>name</code>, <code>type</code> (string·text·int·bool·enum·csv·date·json·group), <code>values</code>, nested <code>fields</code> for objects. Flags steer the form: <code>required</code>, <code>optional</code> (group enable), <code>deprecated</code> (hidden behind a toggle), <code>advanced</code> (tucked into a collapsed <em>Advanced options</em> group), <code>help</code> (shown inline below the param chip). Renders to a form control; serialized via <code>to_dict()</code>.</td></tr>
+      <tr><td><code>Endpoint</code></td><td>One API operation</td><td><code>method</code>, <code>path</code>, <code>label</code> (METHOD /path — description), <code>docs_url</code>, <code>compare_query_field</code> (marks it selectable in Compare), and its list of <code>Param</code>s.</td></tr>
+      <tr><td><code>Provider</code></td><td>A provider</td><td><code>base_url</code>, <code>auth_header</code>/<code>auth_prefix</code>, <code>key_env</code>, <code>endpoints</code>. <code>call()</code> runs the request (default = plain JSON POST; override for streaming/async); <code>catalog()</code> serializes it for the UI.</td></tr>
     </tbody>
   </table>
-  <p class="about-note">Providers differ — Exa is a plain JSON POST with <code>x-api-key</code>; Perplexity's agent is SSE-streaming with <code>Bearer</code> auth. The base handles the common case; a provider that needs streaming or custom auth <strong>overrides <code>call()</code> inside its own package</strong> (Perplexity does). Consistency from the base, isolation per provider.</p>
+  <p class="about-note">Providers differ — Exa is a plain JSON POST with <code>x-api-key</code>; Perplexity's agent is SSE-streaming with <code>Bearer</code> auth; SerpApi uses GET with a query-param key. The base handles the common case; a provider that needs streaming or custom auth <strong>overrides <code>call()</code> inside its own package</strong>. Consistency from the base, isolation per provider.</p>
 
   <hr class="about-divider">
 
@@ -786,7 +850,7 @@
     <div class="flow-box answer">2–4 raw responses, one pane per side</div>
   </div>
   <p class="about-note">The request-body schema has a <strong>single source of truth</strong> — the provider's Python package. The frontend never hardcodes it; it fetches the catalog and renders. So schema and routing can't drift apart. Any endpoint with a <code>compare_query_field</code> is automatically selectable in the Compare picker.</p>
-  <p class="about-note">The generated form keeps a clean primary view: short fields pair up two-per-row, roomy fields span the row, help lives in a hover <strong>ⓘ</strong> tooltip, booleans are toggle switches, and less-common params collapse into <strong>Advanced options</strong>.</p>
+  <p class="about-note">The generated form keeps a clean primary view: param names render as purple monospace chips with inline help text; short fields pair up two-per-row; roomy fields span the row; booleans are toggle switches; and less-common params collapse into <strong>Advanced options</strong>.</p>
 
   <hr class="about-divider">
 
@@ -796,9 +860,9 @@
     <li>Register it in <code>providers/registry.py</code>.</li>
     <li>Add its API key to <code>env.txt</code>.</li>
   </ol>
-  <p>It then appears everywhere — a playground tab, its endpoint dropdown, and generated request forms — with no changes to <code>server.py</code> or <code>playground.js</code>. Any endpoint that sets <code>compare_query_field</code> is automatically selectable in the Compare picker. Override <code>Provider.call()</code> only if the API streams, is async, or authenticates unusually.</p>
+  <p>It then appears everywhere — a playground tab, its endpoint dropdown, generated request forms, and the Compare picker — with no changes to <code>server.py</code> or <code>playground.js</code>. Any endpoint that sets <code>compare_query_field</code> is automatically selectable in Compare. Override <code>Provider.call()</code> only if the API streams, is async, or authenticates unusually.</p>
 
-  <p class="about-note" style="margin-top:20px">This project is <strong>self-documenting</strong>: any change that alters behavior, APIs, or structure updates its docs in the same change (see <code>CLAUDE.md</code> and <code>.claude/skills/self-documenting/</code>). If this page looks wrong, the code changed without its docs — that's a bug.</p>
+  <p class="about-note" style="margin-top:20px">This project is <strong>self-documenting</strong>: any change that alters behavior, APIs, or structure updates its docs in the same change. If this page looks wrong, the code changed without its docs — that's a bug.</p>
 
 </div>
 </div>
@@ -880,7 +944,12 @@ function cmpSlotHtml(side) {
   return `<div class="cmp-col" id="cmpCol-${side}">
     <div class="cmp-col-head">
       <select id="cmpProv-${side}" class="cmp-select"></select>
-      <select id="cmpEp-${side}" class="cmp-select cmp-ep"></select>
+      <div class="pg-endpoint-bar cmp-ep-bar">
+        <label class="pg-endpoint-label">Endpoint</label>
+        <select id="cmpEp-${side}" class="pg-input pg-select cmp-ep-sel"></select>
+        <a id="cmpDocsLink-${side}" class="pg-docs-link" target="_blank" rel="noopener" style="display:none">API docs ↗</a>
+      </div>
+      <div class="pg-endpoint-desc cmp-ep-desc" id="cmpMeta-${side}"></div>
     </div>
     <div class="pg-form" id="cmpForm-${side}"></div>
   </div>`;
@@ -912,9 +981,10 @@ function cmpShortLabel(ep) { return (ep.label || '').replace(/^(GET|POST)\s+/, '
 function cmpFillEndpoints(side) {
   const provId = document.getElementById('cmpProv-' + side).value;
   const epSel = document.getElementById('cmpEp-' + side);
+  const epBar = epSel ? epSel.closest('.cmp-ep-bar') : null;
   epSel.innerHTML = '';
-  if (!provId) { epSel.style.display = 'none'; return; }   // None
-  epSel.style.display = '';
+  if (!provId) { if (epBar) epBar.style.display = 'none'; return; }
+  if (epBar) epBar.style.display = '';
   const p = window.PG_CATALOG.providers[provId];
   for (const eid of p.endpointOrder.filter(e => p.endpoints[e].comparable))
     epSel.appendChild(new Option(cmpShortLabel(p.endpoints[eid]), eid));
@@ -922,18 +992,52 @@ function cmpFillEndpoints(side) {
 
 // Build (or clear) one side's parameter form. A "None" side is dimmed + emptied
 // and won't run. Reuses the playground's schema renderer, skipping the query
-// field (driven by the shared query box).
+// field (driven by the shared query box). Endpoint description + docs link mirror
+// the individual provider tab's display.
 function cmpBuildSideForm(side) {
   const provId = document.getElementById('cmpProv-' + side).value;
   const col = document.getElementById('cmpCol-' + side);
   const host = document.getElementById('cmpForm-' + side);
   host.innerHTML = '';
-  if (!provId) { col.classList.add('cmp-col-off'); cmpState[side] = { provider: '' }; return; }
+  const metaEl = document.getElementById('cmpMeta-' + side);
+  const docsLink = document.getElementById('cmpDocsLink-' + side);
+  if (!provId) {
+    col.classList.add('cmp-col-off');
+    cmpState[side] = { provider: '' };
+    if (metaEl) metaEl.textContent = '';
+    if (docsLink) docsLink.style.display = 'none';
+    return;
+  }
   col.classList.remove('cmp-col-off');
   const eid = document.getElementById('cmpEp-' + side).value;
   const ep = window.PG_CATALOG.providers[provId].endpoints[eid];
+  // Endpoint description — same as individual tab's updateEndpointMeta
+  if (metaEl) metaEl.textContent = (ep.label || '').split(' — ').slice(1).join(' — ');
+  if (docsLink) {
+    if (ep.docsUrl) { docsLink.href = ep.docsUrl; docsLink.style.display = ''; }
+    else { docsLink.style.display = 'none'; }
+  }
   const skip = new Set(ep.compareQueryField ? [ep.compareQueryField] : []);
   cmpState[side] = { provider: provId, eid, ep, readers: renderSchemaInto(host, ep.schema, skip) };
+
+  // Deprecated fields: hide by default, show a toggle only when present (mirrors individual tab)
+  const depCount = window.countDeprecated ? window.countDeprecated(ep.schema) : 0;
+  let depToggle = col.querySelector('.cmp-dep-toggle');
+  if (!depToggle) {
+    depToggle = document.createElement('label');
+    depToggle.className = 'pg-dep-toggle cmp-dep-toggle';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'pg-check';
+    const lbl = document.createElement('span');
+    lbl.textContent = 'Show deprecated fields';
+    depToggle.appendChild(cb); depToggle.appendChild(lbl);
+    col.insertBefore(depToggle, host);
+    cb.addEventListener('change', () => host.classList.toggle('hide-deprecated', !cb.checked));
+  }
+  const depCb = depToggle.querySelector('input');
+  depToggle.style.display = depCount ? '' : 'none';
+  depCb.checked = false;
+  host.classList.toggle('hide-deprecated', true);
 }
 
 function setCmpStatus(t) { document.getElementById('cmpStatusText').textContent = t; }
@@ -956,7 +1060,7 @@ async function runCompare() {
   const active = cmpActiveSides();
   if (active.length < 2) {
     document.getElementById('cmpStatus').classList.add('visible');
-    setCmpStatus('Pick at least two sides (set the others to “— None —”).');
+    setCmpStatus('Pick at least two sides (set the others to "— None —").');
     return;
   }
 

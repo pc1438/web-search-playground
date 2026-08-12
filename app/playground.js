@@ -64,13 +64,15 @@ function renderParam(def, depth = 0) {
   if (def.type === "group") return renderGroup(def, depth);
 
   const row = el("div", { class: "pg-field" });
+  const labelRow = el("div", { class: "pg-label-row" });
   const label = el("label", { class: "pg-label" });
   const nameChip = el("span", { class: "pg-label-name", text: def.label || def.name });
   label.appendChild(nameChip);
   if (def.required) label.appendChild(el("span", { class: "pg-req", text: "*" }));
   if (def.help) label.appendChild(el("span", { class: "pg-info", "data-tip": def.help, text: "i" }));
-  row.appendChild(label);
-  if (def.help) row.appendChild(el("span", { class: "pg-help", text: def.help }));
+  labelRow.appendChild(label);
+  if (def.help) labelRow.appendChild(el("span", { class: "pg-help", text: def.help }));
+  row.appendChild(labelRow);
 
   let control, read;
 
@@ -280,6 +282,7 @@ function buildForm() {
 function countDeprecated(schema) {
   return (schema || []).reduce((n, p) => n + (p.deprecated ? 1 : 0) + countDeprecated(p.fields), 0);
 }
+window.countDeprecated = countDeprecated;
 
 // In compare mode the fan-out field is driven by the compare panel, not the
 // form — dim it (and it's excluded from required-field validation) so that's clear.
@@ -301,11 +304,16 @@ function buildCompareOn(ep) {
   const wrap = document.getElementById("pgCompareOn");
   wrap.innerHTML = "";
   const params = ep.compareParams || [];
+  const desc = document.getElementById("pgCompareDesc");
+  if (desc) {
+    const field = pluralize(pg.compareParam || params[0]);
+    desc.textContent = `Send the same query once per ${field} value — see each response side by side.`;
+  }
   if (params.length <= 1) {
-    wrap.appendChild(el("span", { class: "pg-compare-on-label", text: "Comparing across " + pluralize(params[0]) }));
+    wrap.appendChild(el("span", { class: "pg-compare-on-label", text: "Fan out across: " + pluralize(params[0]) }));
     return;
   }
-  wrap.appendChild(el("span", { class: "pg-compare-on-label", text: "Compare on:" }));
+  wrap.appendChild(el("span", { class: "pg-compare-on-label", text: "Fan out across:" }));
   for (const p of params) {
     wrap.appendChild(el("button", {
       type: "button", class: "pg-onpill" + (p === pg.compareParam ? " active" : ""), text: p,
