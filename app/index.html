@@ -76,11 +76,11 @@
   }
   .tab-intro {
     padding: 16px 32px 0;
-    font-size: 13px;
-    color: #5a6270;
-    line-height: 1.5;
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.6;
   }
-  .tab-intro strong { color: #1f2328; }
+  .tab-intro strong { color: #111827; }
   .input-bar select {
     background: #fff;
     color: #1f2328;
@@ -183,13 +183,13 @@
   .pg-wrap { display: grid; grid-template-columns: 440px 1fr; gap: 0; min-height: calc(100vh - 185px); align-items: stretch; }
   .pg-left { padding: 20px 32px; border-right: 2px solid #cbd0d6; background: #eef1f5; }
   .pg-right { padding: 20px 32px; min-width: 0; background: #ffffff; }
-  .pg-left-label, .pg-right-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+  .pg-left-label, .pg-right-label { font-size: 12px; font-weight: 800; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
 
   .pg-endpoint-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .pg-endpoint-bar .pg-select { flex: 1; min-width: 0; }
-  .pg-endpoint-label { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
+  .pg-endpoint-label { font-size: 12px; font-weight: 800; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.08em; }
   /* The dropdown shows METHOD + path; this is just the human description under it. */
-  .pg-endpoint-desc { font-size: 13px; color: #5a6270; line-height: 1.45; margin: 0 0 16px; }
+  .pg-endpoint-desc { font-size: 14px; font-weight: 500; color: #374151; line-height: 1.45; margin: 0 0 16px; }
   .pg-docs-link { font-size: 12px; font-weight: 600; color: #3d434d; text-decoration: none; border: 1px solid #d0d3d8; border-radius: 6px; padding: 4px 10px; white-space: nowrap; }
   .pg-docs-link:hover { background: #f1f5f9; border-color: #9ca3af; }
 
@@ -231,7 +231,9 @@
   .pg-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; align-items: start; }
   .pg-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .pg-full { grid-column: 1 / -1; }   /* groups + roomy fields span both columns */
-  .pg-label { font-size: 12px; font-weight: 600; color: #5a6270; font-family: 'SF Mono', 'Fira Code', monospace; display: flex; align-items: center; }
+  .pg-label { font-size: 12px; font-weight: 700; color: #5b21b6; font-family: 'SF Mono', 'Fira Code', monospace; display: flex; align-items: center; gap: 4px; }
+  .pg-label-name { background: #f0ebff; border-radius: 4px; padding: 1px 6px; letter-spacing: -.01em; }
+  .pg-help { font-size: 11px; color: #6b7280; font-family: system-ui, sans-serif; font-weight: 400; line-height: 1.4; margin-top: -1px; }
   .pg-req { color: #dc2626; }
   .pg-invalid .pg-input { border-color: #dc2626; }
   .pg-invalid .pg-label { color: #dc2626; }
@@ -552,9 +554,10 @@
   .cmp-vs { font-size: 13px; font-weight: 700; color: #8c959f; }
   .cmp-query { flex: 1; min-width: 260px; }
   /* Setup section — grouped + labeled so it reads as "configure", distinct from results */
-  .cmp-setup { background: #eef1f5; border: 1px solid #e4e6e9; border-radius: 12px; padding: 16px 18px; margin-bottom: 22px; }
-  .cmp-setup .input-bar, .cmp-setup .cmp-config { margin-bottom: 0; }
+  .cmp-setup { background: #eef1f5; border: 1px solid #e4e6e9; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+  .cmp-setup .cmp-config { margin-bottom: 0; }
   .cmp-setup-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #8c959f; margin-bottom: 8px; }
+  .cmp-query-row { display: flex; align-items: center; gap: 8px; }
   .cmp-config-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
   .cmp-config-toggle:hover { color: #5a6270; }
   .cmp-config-toggle .pg-chevron { margin-left: auto; }
@@ -673,17 +676,14 @@
   </div>
 
   <div class="cmp-setup">
-    <div class="cmp-setup-label">Question · sent to all active sides</div>
-    <div class="input-bar" style="flex-wrap:wrap">
+    <div class="cmp-query-row">
       <input type="text" id="cmpQuery" class="cmp-query" placeholder="Ask one question — sent to every active side…"
              value="Who won the 2026 Winter Olympics men's hockey gold?">
-      <div style="display:flex;flex-direction:column;gap:2px">
-        <button class="pg-browse-inline-btn" id="cmpBrowseBtn" onclick="window.togglePgQBrowser('cmp', document.getElementById('cmpQuery'))">Browse questions <span class="pg-browse-info">i</span></button>
-        <span class="pg-browse-subhint">pick a sample question to fill the query box</span>
-      </div>
+      <button class="pg-browse-inline-btn" id="cmpBrowseBtn" onclick="window.togglePgQBrowser('cmp', document.getElementById('cmpQuery'))">Browse questions <span class="pg-browse-info">i</span></button>
       <button id="cmpRunBtn" onclick="runCompare()">Compare</button>
       <button id="cmpStopBtn" class="stop-btn" onclick="stopCompare()" style="display:none">Stop</button>
     </div>
+    <div class="pg-browse-subhint" style="margin-top:4px">pick a sample question to fill the query box above</div>
     <div class="pg-qbrowser" id="pgQBrowser-cmp"></div>
     <div class="cmp-setup-label cmp-config-toggle" id="cmpConfigToggle" onclick="toggleCmpConfig()" style="margin-top:16px">
       <span>Compare up to 4 endpoints · set any to “— None —” to skip</span>

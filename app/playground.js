@@ -64,10 +64,13 @@ function renderParam(def, depth = 0) {
   if (def.type === "group") return renderGroup(def, depth);
 
   const row = el("div", { class: "pg-field" });
-  const label = el("label", { class: "pg-label", text: def.label || def.name });
-  if (def.required) label.appendChild(el("span", { class: "pg-req", text: " *" }));
+  const label = el("label", { class: "pg-label" });
+  const nameChip = el("span", { class: "pg-label-name", text: def.label || def.name });
+  label.appendChild(nameChip);
+  if (def.required) label.appendChild(el("span", { class: "pg-req", text: "*" }));
   if (def.help) label.appendChild(el("span", { class: "pg-info", "data-tip": def.help, text: "i" }));
   row.appendChild(label);
+  if (def.help) row.appendChild(el("span", { class: "pg-help", text: def.help }));
 
   let control, read;
 
