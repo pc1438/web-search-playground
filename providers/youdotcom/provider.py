@@ -1,10 +1,10 @@
 """
 providers/youdotcom/provider.py — the You.com provider.
 
-Every You.com endpoint (Search, Contents, Research, Finance Research) is a plain
-JSON POST with an `X-API-Key` header returning JSON, so the base `call()` handles
-them all — no override needed. Search/Contents live on a different host, which the
-endpoints set via `Endpoint.base_url`.
+Every You.com endpoint is a plain JSON POST/GET with an `X-API-Key` header, so
+the base `call()` handles them all. The one override here translates the flat
+`extraction_preset` compare-shim param into the nested extraction object the
+API actually expects.
 """
 
 from providers.base import Provider
@@ -19,3 +19,11 @@ class YouDotComProvider(Provider):
     key_env = "YDC_API_KEY"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
+
+    def call(self, endpoint_id: str, params: dict, timeout: int = 120) -> dict:
+        if endpoint_id == "search" and "extraction_preset" in params:
+            params = dict(params)
+            preset = params.pop("extraction_preset", "")
+            if preset and preset != "(none)":
+                params["extraction"] = {"extraction_mode": preset}
+        return super().call(endpoint_id, params, timeout)

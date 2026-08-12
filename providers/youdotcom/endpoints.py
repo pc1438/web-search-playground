@@ -37,7 +37,8 @@ def _source_control():
 
 
 SEARCH = Endpoint("search", "POST /v1/search — LLM-ready web + news results", "/v1/search",
-    base_url=YDC_INDEX, compare_query_field="query", docs_url=f"{DOCS}/search/v1-search", params=[
+    base_url=YDC_INDEX, compare_query_field="query", compare_params=["extraction_preset"],
+    docs_url=f"{DOCS}/search/v1-search", params=[
     Param("query", "text", required=True, placeholder="e.g. best open-source vector databases",
           help="Search query (may include operators like site:, filetype:)."),
     Param("count", "int", min=1, max=50, placeholder="10", help="Results per section (web/news)."),
@@ -49,6 +50,8 @@ SEARCH = Endpoint("search", "POST /v1/search — LLM-ready web + news results", 
     Param("include_domains", "csv", advanced=True, help="Allowlist (comma-separated; not with exclude_domains)."),
     Param("exclude_domains", "csv", advanced=True, help="Blocklist (comma-separated)."),
     Param("boost_domains", "csv", advanced=True, help="Boost these domains' ranking (up to 500)."),
+    Param("extraction_preset", "enum", values=["(none)", "highlights", "full_page"], advanced=True,
+          help="Compare extraction modes side by side via Compare mode. Each value fires a separate call: (none) = no extraction, highlights = query-relevant passages, full_page = full crawled content. Converted to the extraction object at request time."),
     Param("knowledge", "enum", values=["core"], advanced=True,
           help="Return knowledge nodes (structured answers) alongside web results. Set to 'core' to enable; omit to disable."),
     Param("extraction", "group", optional=True, advanced=True,
