@@ -18,9 +18,15 @@ TASK_PROCESSORS = ["lite", "base", "core", "pro", "ultra"]
 
 SEARCH_MODES = ["turbo", "fast", "basic", "advanced"]   # fast added 2026-08
 
+CLIENT_MODELS = [
+    "claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5",
+    "gpt-4o", "gpt-4o-mini",
+    "gemini-2.5-pro", "gemini-2.5-flash",
+]
+
 SEARCH = Endpoint(
     "search", "POST /v1/search — ranked results + excerpts (incl. Search Turbo)",
-    "/v1/search", compare_query_field="search_queries", compare_params=["mode"],
+    "/v1/search", compare_query_field="search_queries", compare_params=["mode", "client_model"],
     docs_url="https://docs.parallel.ai/api-reference/search/search", params=[
         Param("search_queries", "csv", required=True, placeholder="best vector databases 2026",
               help="Keyword queries to execute (comma-separated). At least one required."),
@@ -31,9 +37,8 @@ SEARCH = Endpoint(
                    "(default, ~3s, highest quality). turbo = Parallel's Search Turbo."),
         Param("max_chars_total", "int", advanced=True,
               help="Upper bound on total characters across all result excerpts."),
-        Param("client_model", "string", advanced=True,
-              placeholder="e.g. claude-sonnet-4-5",
-              help="Model consuming these results — enables service optimizations for that LLM."),
+        Param("client_model", "enum", values=CLIENT_MODELS, advanced=True,
+              help="Model consuming these results — enables service optimizations for that LLM. Fan out via Compare to see if Parallel's output changes per model."),
         Param("session_id", "string", advanced=True, help="Optional ID to group related calls (up to 1000 chars)."),
         Param("advanced_settings", "group", optional=True, advanced=True,
               help="Fine-grained control over sources, freshness, live fetching, and result sizing.", fields=[
