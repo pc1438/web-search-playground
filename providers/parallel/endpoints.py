@@ -19,9 +19,12 @@ TASK_PROCESSORS = ["lite", "base", "core", "pro", "ultra"]
 SEARCH_MODES = ["turbo", "fast", "basic", "advanced"]   # fast added 2026-08
 
 CLIENT_MODELS = [
-    "claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5",
-    "gpt-4o", "gpt-4o-mini",
-    "gemini-2.5-pro", "gemini-2.5-flash",
+    "claude-opus-5",        # Anthropic
+    "claude-sonnet-5",      # Anthropic
+    "kimi-k2",              # Moonshot AI
+    "deepseek-r1",          # DeepSeek
+    "minimax-text-01",      # MiniMax
+    "nemotron-4-340b",      # NVIDIA
 ]
 
 SEARCH = Endpoint(
