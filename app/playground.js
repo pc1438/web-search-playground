@@ -716,12 +716,21 @@ function renderResponse(container, { httpOk, clientMs, data }) {
       knowledgeNodes.forEach(k => section.appendChild(renderKnowledgeCard(k)));
       container.appendChild(section);
     }
-    const list = el("div", { class: "pg-cards" });
-    const shown = results.slice(0, 12);
-    for (const r of shown) list.appendChild(renderResultCard(r));
-    container.appendChild(list);
-    if (results.length > shown.length)
-      container.appendChild(el("div", { class: "pg-help", text: `+ ${results.length - shown.length} more — expand the raw response object above to see all` }));
+    // You.com /v1/search returns body.results.{web, news} — render each as a
+    // collapsible section so both are visible without losing either.
+    const ydcWeb  = body.results && Array.isArray(body.results.web)  ? body.results.web  : null;
+    const ydcNews = body.results && Array.isArray(body.results.news) ? body.results.news : null;
+    if (ydcWeb || ydcNews) {
+      if (ydcWeb)  container.appendChild(renderResultSection("Web results",  ydcWeb,  true));
+      if (ydcNews) container.appendChild(renderResultSection("News results", ydcNews, true));
+    } else {
+      const list = el("div", { class: "pg-cards" });
+      const shown = results.slice(0, 12);
+      for (const r of shown) list.appendChild(renderResultCard(r));
+      container.appendChild(list);
+      if (results.length > shown.length)
+        container.appendChild(el("div", { class: "pg-help", text: `+ ${results.length - shown.length} more — expand the raw response object above to see all` }));
+    }
   }
 }
 
@@ -833,6 +842,22 @@ function renderKnowledgeCard(k) {
   if (k.as_of) footer.appendChild(el("div", { class: "pg-knowledge-date", text: "as of " + k.as_of }));
   if (footer.children.length) card.appendChild(footer);
   return card;
+}
+
+function renderResultSection(title, items, defaultOpen = true) {
+  const details = el("details", { class: "pg-result-section" });
+  if (defaultOpen) details.open = true;
+  const summary = el("summary");
+  summary.appendChild(document.createTextNode(title + " "));
+  summary.appendChild(el("span", { class: "pg-section-count", text: "(" + items.length + ")" }));
+  details.appendChild(summary);
+  const shown = items.slice(0, 12);
+  const list = el("div", { class: "pg-cards" });
+  for (const r of shown) list.appendChild(renderResultCard(r));
+  details.appendChild(list);
+  if (items.length > shown.length)
+    details.appendChild(el("div", { class: "pg-help", text: `+ ${items.length - shown.length} more — expand the raw response object above to see all` }));
+  return details;
 }
 
 function renderResultCard(r) {
