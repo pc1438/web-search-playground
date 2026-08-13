@@ -845,8 +845,9 @@ function renderKnowledgeCard(k) {
 }
 
 function renderResultSection(title, items, defaultOpen = true) {
-  const details = el("details", { class: "pg-result-section" });
-  if (defaultOpen) details.open = true;
+  const attrs = { class: "pg-result-section" };
+  if (defaultOpen) attrs.open = "";
+  const details = el("details", attrs);
   const summary = el("summary");
   summary.appendChild(document.createTextNode(title + " "));
   summary.appendChild(el("span", { class: "pg-section-count", text: "(" + items.length + ")" }));
