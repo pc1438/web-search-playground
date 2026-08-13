@@ -16,5 +16,6 @@ class TavilyProvider(Provider):
     auth_header = "Authorization"
     auth_prefix = "Bearer "
     key_env = "TAVILY_API_KEY"
+    key_docs_url = "https://app.tavily.com/"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS

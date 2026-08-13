@@ -21,14 +21,16 @@ class SerpApiProvider(Provider):
     base_url = "https://serpapi.com"
     auth_query_param = "api_key"   # key goes in the query string, not a header
     key_env = "SERPAPI_API_KEY"
+    key_docs_url = "https://serpapi.com/manage-api-key"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
 
-    def call(self, endpoint_id: str, params: dict, timeout: int = 60) -> dict:
+    def call(self, endpoint_id: str, params: dict, timeout: int = 60,
+             request_keys: dict = None) -> dict:
         # Rename the query field to the selected engine's expected param (e.g.
         # yandex → text). Everything else is a standard GET (base call()).
         params = dict(params)
         qp = _QUERY_PARAM.get(params.get("engine"))
         if qp and "q" in params:
             params[qp] = params.pop("q")
-        return super().call(endpoint_id, params, timeout)
+        return super().call(endpoint_id, params, timeout, request_keys=request_keys)

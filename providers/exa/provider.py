@@ -16,5 +16,6 @@ class ExaProvider(Provider):
     base_url = "https://api.exa.ai"
     auth_header = "x-api-key"
     key_env = "EXA_API_KEY"
+    key_docs_url = "https://dashboard.exa.ai/"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS

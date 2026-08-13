@@ -1,10 +1,10 @@
 """
 providers/parallel/endpoints.py — Parallel Search + FindAll API schemas.
 
-Coverage verified against the live API (2026-07) since Parallel's public docs
-don't fully enumerate the search bodies. Accepted fields probed directly:
-  /v1/search (stable): objective, search_queries, session_id, and `mode`
-      (enum: turbo/basic/advanced, verified live 2026-07; exposed as a param).
+Coverage verified against docs.parallel.ai (2026-08):
+  /v1/search (stable): objective, search_queries, mode (turbo/fast/basic/advanced),
+      max_chars_total, client_model, session_id, advanced_settings{source_policy,
+      fetch_policy, excerpt_settings, location, max_results}.
   /v1beta/search (beta): objective, search_queries, processor, max_results,
       max_chars_per_result, source_policy{include_domains, exclude_domains}, session_id.
   /v1beta/findall/entity-search: entity_type, objective, match_limit (complete).
@@ -16,7 +16,7 @@ ENTITY_TYPES = ["people", "companies"]
 PROCESSORS = ["base", "pro"]
 TASK_PROCESSORS = ["lite", "base", "core", "pro", "ultra"]
 
-SEARCH_MODES = ["turbo", "basic", "advanced"]   # verified live 2026-07
+SEARCH_MODES = ["turbo", "fast", "basic", "advanced"]   # fast added 2026-08
 
 SEARCH = Endpoint(
     "search", "POST /v1/search — ranked results + excerpts (incl. Search Turbo)",
@@ -29,7 +29,39 @@ SEARCH = Endpoint(
         Param("mode", "enum", values=SEARCH_MODES,
               help="Latency/quality tier: turbo (~200ms, cheapest), basic, or advanced "
                    "(default, ~3s, highest quality). turbo = Parallel's Search Turbo."),
+        Param("max_chars_total", "int", advanced=True,
+              help="Upper bound on total characters across all result excerpts."),
+        Param("client_model", "string", advanced=True,
+              placeholder="e.g. claude-sonnet-4-5",
+              help="Model consuming these results — enables service optimizations for that LLM."),
         Param("session_id", "string", advanced=True, help="Optional ID to group related calls (up to 1000 chars)."),
+        Param("advanced_settings", "group", optional=True, advanced=True,
+              help="Fine-grained control over sources, freshness, live fetching, and result sizing.", fields=[
+            Param("source_policy", "group", optional=True,
+                  help="Domain and date filtering for search results.", fields=[
+                Param("include_domains", "csv", help="Restrict to these domains (e.g. example.com, .edu). Max 200 combined with exclude."),
+                Param("exclude_domains", "csv", help="Block these domains. Max 200 combined with include."),
+                Param("after_date", "date", help="Only return content published on or after this date (YYYY-MM-DD)."),
+            ]),
+            Param("fetch_policy", "group", optional=True,
+                  help="Controls cached vs. live content. Live fetching increases latency significantly.", fields=[
+                Param("max_age_seconds", "int", min=600,
+                      help="Trigger a live fetch when cached content is older than this many seconds (min 600)."),
+                Param("timeout_seconds", "int",
+                      help="Seconds to wait for live content before falling back."),
+                Param("disable_cache_fallback", "bool",
+                      help="If true, return an error instead of falling back to older cached content."),
+            ]),
+            Param("excerpt_settings", "group", optional=True,
+                  help="Controls excerpt output dimensions.", fields=[
+                Param("max_chars_per_result", "int",
+                      help="Max characters to include per URL. Excerpts may be shorter to optimize relevance."),
+            ]),
+            Param("location", "string", placeholder="us",
+                  help="ISO 3166-1 alpha-2 country code for geo-targeted results (e.g. us, gb, de, jp)."),
+            Param("max_results", "int", min=1, max=100, placeholder="10",
+                  help="Upper bound on results to return (default 10)."),
+        ]),
     ])
 
 SEARCH_BETA = Endpoint(

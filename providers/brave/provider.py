@@ -20,5 +20,7 @@ class BraveProvider(Provider):
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
 
-    def headers(self) -> dict:
-        return {**super().headers(), "Accept": "application/json"}
+    key_docs_url = "https://brave.com/search/api/"
+
+    def headers(self, request_keys: dict = None) -> dict:
+        return {**super().headers(request_keys), "Accept": "application/json"}

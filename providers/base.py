@@ -125,24 +125,31 @@ class Provider:
     auth_prefix: str = ""                     # value prefix, e.g. "Bearer " for Authorization
     auth_query_param: str = ""                # if set, key goes in this query param instead of a header (e.g. SerpApi ?api_key=)
     key_env: str = ""                         # env var holding the key
+    key_docs_url: str = ""                    # where users can get their own API key
     endpoint_order: list = []                 # display order; falls back to dict order
     endpoints: dict = {}                      # id -> Endpoint
 
     # ── auth ──
-    def api_key(self) -> str:
+    def api_key(self, request_keys: dict = None) -> str:
+        """Return the API key. Env var wins (admin-configured); request_keys is
+        used as a fallback so users can supply their own key via the frontend."""
         key = os.environ.get(self.key_env, "")
+        if (not key or key.startswith("your-")) and request_keys:
+            key = request_keys.get(self.key_env, "")
         if not key or key.startswith("your-"):
-            raise ProviderKeyMissing(f"{self.key_env} not configured — add it to env.txt")
+            raise ProviderKeyMissing(
+                f"{self.key_env} not configured — add it to env.txt or set it in the Keys panel")
         return key
 
-    def headers(self) -> dict:
+    def headers(self, request_keys: dict = None) -> dict:
         h = {"Content-Type": "application/json"}
         if self.auth_header:
-            h[self.auth_header] = self.auth_prefix + self.api_key()
+            h[self.auth_header] = self.auth_prefix + self.api_key(request_keys)
         return h
 
     # ── invocation ──
-    def call(self, endpoint_id: str, params: dict, timeout: int = 120) -> dict:
+    def call(self, endpoint_id: str, params: dict, timeout: int = 120,
+             request_keys: dict = None) -> dict:
         """Default: send a single request and return a wrapper the UI understands.
         POST/PUT/… send `params` as a JSON body; GET sends them as query params
         (list values comma-joined, since search APIs expect csv, not repeated
@@ -153,14 +160,14 @@ class Provider:
         """
         ep = self.endpoints[endpoint_id]
         url = (ep.base_url or self.base_url).rstrip("/") + ep.path
-        headers = {**self.headers(), **(ep.extra_headers or {})}
+        headers = {**self.headers(request_keys), **(ep.extra_headers or {})}
         method = (ep.method or "POST").upper()
         log.debug("→ %s %s params=%s", method, url, json.dumps(params))
         t0 = time.perf_counter()
         if method == "GET":
             qp = {k: (",".join(map(str, v)) if isinstance(v, list) else v) for k, v in params.items()}
             if self.auth_query_param:            # key goes in the query string (never echoed in `request`)
-                qp[self.auth_query_param] = self.api_key()
+                qp[self.auth_query_param] = self.api_key(request_keys)
             resp = requests.request(method, url, params=qp, headers=headers, timeout=timeout)
         else:
             resp = requests.request(method, url, json=params, headers=headers, timeout=timeout)
@@ -182,7 +189,8 @@ class Provider:
     # ── serialization for the frontend ──
     def catalog(self) -> dict:
         """The provider's public shape: identity + endpoint schemas. Exposes the
-        key's env-var *name* (for the cURL snippet), never the key itself."""
+        key's env-var *name* (for the cURL snippet) and whether it's already set
+        on the server; never the key value itself."""
         order = self.endpoint_order or list(self.endpoints.keys())
         return {
             "label": self.label,
@@ -191,6 +199,8 @@ class Provider:
             "authPrefix": self.auth_prefix,
             "authQueryParam": self.auth_query_param,
             "keyEnv": self.key_env,
+            "keyConfigured": bool(os.environ.get(self.key_env, "").strip()),
+            "keyDocsUrl": self.key_docs_url,
             "comparable": any(self.endpoints[eid].compare_query_field for eid in order),
             "endpointOrder": order,
             "endpoints": {eid: self.endpoints[eid].to_dict() for eid in order},

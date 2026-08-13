@@ -29,19 +29,22 @@ class ParallelProvider(Provider):
     base_url = "https://api.parallel.ai"
     auth_header = "x-api-key"
     key_env = "PARALLEL_API_KEY"
+    key_docs_url = "https://app.parallel.ai/"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
 
-    def call(self, endpoint_id: str, params: dict, timeout: int = 180) -> dict:
+    def call(self, endpoint_id: str, params: dict, timeout: int = 180,
+             request_keys: dict = None) -> dict:
         # Search/FindAll are single POSTs → base call(). Task is create + poll.
         if endpoint_id != "task":
-            return super().call(endpoint_id, params, timeout)
-        return self._run_task(params, timeout=timeout)
+            return super().call(endpoint_id, params, timeout, request_keys=request_keys)
+        return self._run_task(params, timeout=timeout, request_keys=request_keys)
 
     # ── Task API create → poll → result ──
-    def _run_task(self, params: dict, timeout: int = 180, on_progress=None) -> dict:
+    def _run_task(self, params: dict, timeout: int = 180, on_progress=None,
+                  request_keys: dict = None) -> dict:
         base = self.base_url.rstrip("/")
-        headers = self.headers()
+        headers = self.headers(request_keys)
         runs_url = f"{base}/v1/tasks/runs"
         t0 = time.perf_counter()
         elapsed = lambda: round((time.perf_counter() - t0) * 1000)

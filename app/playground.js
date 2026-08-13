@@ -365,13 +365,30 @@ function readParams() {
   return params;
 }
 
+// ─── Key storage ──────────────────────────────────────────────────────────
+// Build the {ENV_VAR: value} dict of user-supplied keys from localStorage.
+// Only sends keys for providers where the server hasn't configured them already
+// (keyConfigured = false) so the server's env vars always take precedence.
+function getStoredKeys() {
+  const cat = window.PG_CATALOG;
+  if (!cat) return {};
+  const keys = {};
+  for (const prov of Object.values(cat.providers)) {
+    if (prov.keyConfigured || !prov.keyEnv) continue;
+    const v = localStorage.getItem(`pg_key_${prov.keyEnv}`);
+    if (v) keys[prov.keyEnv] = v;
+  }
+  return keys;
+}
+
 // ─── Send ────────────────────────────────────────────────────────────────
 async function pgCall(params) {
   const t0 = performance.now();
   const resp = await fetch("/api/call", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider: pg.provider, endpoint: pg.endpoint, params }),
+    body: JSON.stringify({ provider: pg.provider, endpoint: pg.endpoint, params,
+                           keys: getStoredKeys() }),
   });
   const clientMs = Math.round(performance.now() - t0);
   let data;

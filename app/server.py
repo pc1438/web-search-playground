@@ -240,6 +240,13 @@ class AppHandler(SimpleHTTPRequestHandler):
         if params is None:
             params = {}
 
+        request_keys = body.get("keys") or {}
+        if not isinstance(request_keys, dict):
+            request_keys = {}
+        # Sanitize: only string key→value pairs allowed
+        request_keys = {k: v for k, v in request_keys.items()
+                        if isinstance(k, str) and isinstance(v, str)}
+
         provider = registry.get(provider_id)
         if not provider:
             self._send_json(400, {"error": f"Unknown provider: {provider_id!r}"})
@@ -253,7 +260,8 @@ class AppHandler(SimpleHTTPRequestHandler):
 
         logger.debug("call %s/%s params=%s", provider_id, endpoint, json.dumps(params))
         try:
-            result = provider.call(endpoint, params, timeout=PROXY_TIMEOUT)
+            result = provider.call(endpoint, params, timeout=PROXY_TIMEOUT,
+                                   request_keys=request_keys or None)
         except ProviderKeyMissing as e:
             self._send_json(500, {"error": str(e)})
             return
@@ -290,6 +298,12 @@ class AppHandler(SimpleHTTPRequestHandler):
         if payload is None:
             return
 
+        request_keys = payload.get("keys") or {}
+        if not isinstance(request_keys, dict):
+            request_keys = {}
+        request_keys = {k: v for k, v in request_keys.items()
+                        if isinstance(k, str) and isinstance(v, str)}
+
         sides_in = payload.get("sides")
         if not isinstance(sides_in, list) or len(sides_in) < 2:
             self._send_json(400, {"error": "Provide at least two sides."})
@@ -315,7 +329,8 @@ class AppHandler(SimpleHTTPRequestHandler):
 
         def run(sid, prov, eid, sparams):
             try:
-                result = prov.call(eid, sparams, timeout=THREAD_TIMEOUT)
+                result = prov.call(eid, sparams, timeout=THREAD_TIMEOUT,
+                                   request_keys=request_keys or None)
             except ProviderKeyMissing as e:
                 result = {"error": str(e)}
             except Exception as e:

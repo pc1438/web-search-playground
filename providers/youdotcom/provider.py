@@ -17,13 +17,15 @@ class YouDotComProvider(Provider):
     base_url = "https://api.you.com"
     auth_header = "X-API-Key"
     key_env = "YDC_API_KEY"
+    key_docs_url = "https://api.you.com/"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
 
-    def call(self, endpoint_id: str, params: dict, timeout: int = 120) -> dict:
+    def call(self, endpoint_id: str, params: dict, timeout: int = 120,
+             request_keys: dict = None) -> dict:
         if endpoint_id == "search" and "extraction_preset" in params:
             params = dict(params)
             preset = params.pop("extraction_preset", "")
             if preset and preset != "(none)":
                 params["extraction"] = {"extraction_mode": preset}
-        return super().call(endpoint_id, params, timeout)
+        return super().call(endpoint_id, params, timeout, request_keys=request_keys)

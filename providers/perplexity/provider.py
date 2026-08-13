@@ -21,20 +21,22 @@ class PerplexityProvider(Provider):
     auth_header = "Authorization"
     auth_prefix = "Bearer "
     key_env = "PERPLEXITY_API_KEY"
+    key_docs_url = "https://www.perplexity.ai/settings/api"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
 
-    def call(self, endpoint_id: str, params: dict, timeout: int = 120) -> dict:
+    def call(self, endpoint_id: str, params: dict, timeout: int = 120,
+             request_keys: dict = None) -> dict:
         # Search API (and any future plain-JSON endpoint) → base POST.
         if endpoint_id != "agent":
-            return super().call(endpoint_id, params, timeout)
+            return super().call(endpoint_id, params, timeout, request_keys=request_keys)
         # Agent API needs tools + instructions + streaming → delegate to the runner.
         question = params.get("input") or params.get("query") or ""
         tools = params.get("tools")
         if isinstance(tools, str):   # fan-out compare mode sends a single tool name
             tools = [tools]
         t0 = time.perf_counter()
-        stats = run_perplexity_agent(question, self.api_key(), tools=tools, model=params.get("model"), timeout=timeout)
+        stats = run_perplexity_agent(question, self.api_key(request_keys), tools=tools, model=params.get("model"), timeout=timeout)
         return {
             "ok": True,
             "status": 200,

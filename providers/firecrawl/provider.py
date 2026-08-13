@@ -17,6 +17,7 @@ class FirecrawlProvider(Provider):
     auth_header = "Authorization"
     auth_prefix = "Bearer "
     key_env = "FIRECRAWL_API_KEY"
+    key_docs_url = "https://www.firecrawl.dev/app/api-keys"
     endpoint_order = ENDPOINT_ORDER
     endpoints = ENDPOINTS
 
@@ -40,6 +41,7 @@ class FirecrawlProvider(Provider):
 
         return p
 
-    def call(self, endpoint_id: str, params: dict, timeout: int = 60) -> dict:
+    def call(self, endpoint_id: str, params: dict, timeout: int = 60,
+             request_keys: dict = None) -> dict:
         built = self._build_params(endpoint_id, params)
-        return super().call(endpoint_id, built, timeout=timeout)
+        return super().call(endpoint_id, built, timeout=timeout, request_keys=request_keys)
