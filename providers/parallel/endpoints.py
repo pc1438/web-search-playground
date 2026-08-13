@@ -26,9 +26,10 @@ CLIENT_MODELS = [
     "o3",                   # OpenAI
     "o4-mini",              # OpenAI
     "gpt-5.6-luna",         # OpenAI
-    "kimi-k2",              # Moonshot AI
-    "deepseek-r1",          # DeepSeek
-    "minimax-text-01",      # MiniMax
+    "kimi-k3",              # Moonshot AI
+    "deepseek-v4-pro",      # DeepSeek
+    "deepseek-v4-flash",    # DeepSeek
+    "minimax-m3",           # MiniMax
     "nemotron-4-340b",      # NVIDIA
 ]
 
