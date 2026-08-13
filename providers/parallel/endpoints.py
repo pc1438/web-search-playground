@@ -21,6 +21,10 @@ SEARCH_MODES = ["turbo", "fast", "basic", "advanced"]   # fast added 2026-08
 CLIENT_MODELS = [
     "claude-opus-5",        # Anthropic
     "claude-sonnet-5",      # Anthropic
+    "gpt-4o",               # OpenAI
+    "gpt-4.1",              # OpenAI
+    "o3",                   # OpenAI
+    "o4-mini",              # OpenAI
     "kimi-k2",              # Moonshot AI
     "deepseek-r1",          # DeepSeek
     "minimax-text-01",      # MiniMax
