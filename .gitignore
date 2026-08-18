@@ -17,3 +17,6 @@ venv/
 
 # Local analysis / deep-dive scratch (not published yet)
 analysis/
+
+# Local review / planning docs
+CODE_REVIEW.md
