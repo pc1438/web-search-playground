@@ -371,9 +371,10 @@ def main():
         daemon_threads = True
 
     AppHandler.ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", f"http://localhost:{port}")
-    server = ThreadedHTTPServer(("", port), AppHandler)
+    host = os.environ.get("BIND_HOST", "")  # set BIND_HOST=127.0.0.1 to restrict to localhost
+    server = ThreadedHTTPServer((host, port), AppHandler)
     print(f"Search API Playground")
-    print(f"Server running at http://localhost:{port}")
+    print(f"Server running at http://{host or '0.0.0.0'}:{port}")
     print(f"Press Ctrl+C to stop\n")
 
     try:

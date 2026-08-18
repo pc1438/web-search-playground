@@ -117,7 +117,7 @@ LOCAL_POIS = Endpoint(
 
 LOCAL_DESC = Endpoint(
     "local_descriptions", "GET /local/descriptions — AI descriptions for locations", "/local/descriptions",
-    method="GET", docs_url=f"{LOCAL_DOCS}/local_pois", params=[   # local API docs (pois page covers descriptions too)
+    method="GET", docs_url=f"{LOCAL_DOCS}/local_descriptions", params=[
         Param("ids", "csv", required=True, help="Location IDs from a Web Search 'locations' result (max 20)."),
         Param("search_lang", "string", advanced=True, placeholder="en", help="Search language code."),
         Param("ui_lang", "string", advanced=True, placeholder="en-US", help="UI language code."),

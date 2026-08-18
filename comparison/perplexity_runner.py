@@ -72,7 +72,7 @@ def run_perplexity_agent(question: str, api_key: str, on_progress=None, tools=No
     e.g. ["web_search", "fetch_url", "people_search", "finance_search"]); defaults
     to web_search + fetch_url. `model` optionally overrides the BYOLLM model.
 
-    Returns a stats dict compatible with the SAC comparison module.
+    Returns a stats dict with per-question results and aggregate metrics.
     """
     headers = {
         "Authorization": f"Bearer {api_key}",
